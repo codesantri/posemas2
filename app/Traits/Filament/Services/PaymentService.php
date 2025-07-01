@@ -1,0 +1,142 @@
+<?php
+
+namespace App\Traits\Filament\Services;
+
+use App\Models\Change;
+use App\Models\Transaction;
+use Filament\Notifications\Notification;
+use App\Filament\Clusters\Shop\Pages\Invoice;
+use App\Filament\Clusters\Shop\Pages\Payment;
+
+trait PaymentService
+{
+    public static function gotoPayment($invoice)
+    {
+        if ($invoice) {
+            return redirect(Payment::getUrl(['invoice' => $invoice]));
+        } else {
+            return redirect()->back();
+        }
+    }
+
+    public static function getLabel(string $type, ?string $changeType = null): string
+    {
+        return match ($type) {
+            'change' => match ($changeType) {
+                'add' => 'Transaksi Tukar Tambah',
+                'deduct' => 'Transaksi Tukar Kurang',
+                'change_model' => 'Transaksi Tukar Model',
+                default => 'Tukar Tambah',
+            },
+            'sale' => 'Transaksi Penjualan',
+            'purchase' => 'Transaksi Pembelian',
+            default => 'Transaksi',
+        };
+    }
+
+    public static function getNotification(string $transactionType, string $invoice): void
+    {
+        if ($transactionType === "change") {
+            $changeModel = Change::where('invoice', $invoice)->first();
+            $changeType = $changeModel?->change_type ?? 'default';
+            $changeLabel = match ($changeType) {
+                'add' => 'Transaksi tukar tambah berhasil',
+                'deduct' => 'Transaksi tukar kurang berhasil',
+                'change_model' => 'Transaksi tukar model berhasil',
+                default => 'Transaksi tukar berhasil',
+            };
+
+            Notification::make()
+                ->title($changeLabel)
+                ->success()
+                ->send();
+            return;
+        }
+
+        switch ($transactionType) {
+            case 'purchase':
+                Notification::make()
+                    ->title('Transaksi pembelian emas berhasil')
+                    ->success()
+                    ->send();
+                break;
+
+            case 'sale':
+                Notification::make()
+                    ->title('Transaksi penjualan emas berhasil')
+                    ->success()
+                    ->send();
+                break;
+
+            default:
+                Notification::make()
+                    ->title('Transaksi berhasil')
+                    ->success()
+                    ->send();
+                break;
+        }
+    }
+
+
+    public static function getPaymentLoad(array $data)
+    {
+        $transaction = Transaction::where('invoice', $data['invoice'])->firstOrFail();
+
+        $alreadyProcessed = false;
+
+        switch ($transaction->transaction_type) {
+            case 'purchase':
+                if ($transaction->purchase && $transaction->purchase->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+
+            case 'sale':
+                if ($transaction->sale && $transaction->sale->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+
+            case 'change':
+                if ($transaction->exchange && $transaction->exchange->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+        }
+
+        if ($alreadyProcessed) {
+            return redirect()
+                ->back()
+                ->with('error', 'Transaksi ini sudah selesai dan tidak bisa diproses lagi.');
+        }
+
+        // Lanjut proses update
+        $transaction->update([
+            'cash' => $data['cash'],
+            'discount' => $data['discount'],
+            'change' => $data['change'],
+            'service' => $data['service'],
+            'total' => $data['total'],
+            'transaction_date' => now(),
+        ]);
+
+        // Update status jika perlu
+        switch ($transaction->transaction_type) {
+            case 'purchase':
+                $transaction->purchase?->update(['status' => 'success']);
+                break;
+
+            case 'sale':
+                $transaction->sale?->update(['status' => 'success']);
+                break;
+
+            case 'change':
+                $transaction->exchange?->update(['status' => 'success']);
+                break;
+        }
+
+        self::getNotification($transaction->transaction_type, $transaction->invoice);
+
+        return redirect(Invoice::getUrl(['invoice' => $transaction->invoice]));
+    }
+}
