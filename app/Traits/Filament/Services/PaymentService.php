@@ -34,6 +34,79 @@ trait PaymentService
         };
     }
 
+
+
+
+    public static function getPaymentLoad(array $data)
+    {
+        $transaction = Transaction::where('invoice', $data['invoice'])->firstOrFail();
+
+        $alreadyProcessed = false;
+
+        switch ($transaction->transaction_type) {
+            case 'purchase':
+                if ($transaction->purchase && $transaction->purchase->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+
+            case 'sale':
+                if ($transaction->sale && $transaction->sale->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+
+            case 'change':
+                if ($transaction->exchange && $transaction->exchange->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+        }
+
+        if ($alreadyProcessed) {
+            return redirect()
+                ->back()
+                ->with('error', 'Transaksi ini sudah selesai dan tidak bisa diproses lagi.');
+        }
+
+        if ($data['cash'] < $data['total']) {
+            Notification::make()
+                ->title('Uang Tunai kurang dari total pembayaran')
+                ->success()
+                ->send();
+            return;
+        }
+
+        $transaction->update([
+            'cash' => $data['cash'],
+            'discount' => $data['discount'],
+            'change' => $data['change'],
+            'service' => $data['service'],
+            'total' => $data['total'],
+            'transaction_date' => now(),
+        ]);
+
+        // Update status jika perlu
+        switch ($transaction->transaction_type) {
+            case 'purchase':
+                $transaction->purchase?->update(['status' => 'success']);
+                break;
+
+            case 'sale':
+                $transaction->sale?->update(['status' => 'success']);
+                break;
+
+            case 'change':
+                $transaction->exchange?->update(['status' => 'success']);
+                break;
+        }
+
+        self::getNotification($transaction->transaction_type, $transaction->invoice);
+
+        return redirect(Invoice::getUrl(['invoice' => $transaction->invoice]));
+    }
+
+
     public static function getNotification(string $transactionType, string $invoice): void
     {
         if ($transactionType === "change") {
@@ -75,68 +148,5 @@ trait PaymentService
                     ->send();
                 break;
         }
-    }
-
-
-    public static function getPaymentLoad(array $data)
-    {
-        $transaction = Transaction::where('invoice', $data['invoice'])->firstOrFail();
-
-        $alreadyProcessed = false;
-
-        switch ($transaction->transaction_type) {
-            case 'purchase':
-                if ($transaction->purchase && $transaction->purchase->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-
-            case 'sale':
-                if ($transaction->sale && $transaction->sale->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-
-            case 'change':
-                if ($transaction->exchange && $transaction->exchange->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-        }
-
-        if ($alreadyProcessed) {
-            return redirect()
-                ->back()
-                ->with('error', 'Transaksi ini sudah selesai dan tidak bisa diproses lagi.');
-        }
-
-        // Lanjut proses update
-        $transaction->update([
-            'cash' => $data['cash'],
-            'discount' => $data['discount'],
-            'change' => $data['change'],
-            'service' => $data['service'],
-            'total' => $data['total'],
-            'transaction_date' => now(),
-        ]);
-
-        // Update status jika perlu
-        switch ($transaction->transaction_type) {
-            case 'purchase':
-                $transaction->purchase?->update(['status' => 'success']);
-                break;
-
-            case 'sale':
-                $transaction->sale?->update(['status' => 'success']);
-                break;
-
-            case 'change':
-                $transaction->exchange?->update(['status' => 'success']);
-                break;
-        }
-
-        self::getNotification($transaction->transaction_type, $transaction->invoice);
-
-        return redirect(Invoice::getUrl(['invoice' => $transaction->invoice]));
     }
 }

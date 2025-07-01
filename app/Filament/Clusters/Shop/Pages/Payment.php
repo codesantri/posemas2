@@ -289,6 +289,13 @@ class Payment extends Page
                 $cashValue = 0;
             }
 
+            if ($this->data['payment_method'] === 'cash') {
+                $cashValue = $this->cash > 0 ? $this->cash : $this->totalPayment;
+            } else {
+                $cashValue = 0;
+            }
+
+
             PaymentService::getPaymentLoad([
                 'invoice' => $this->transaction->invoice,
                 'type' => $this->transactionType,

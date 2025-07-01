@@ -33,16 +33,6 @@ class Product extends Model
         return $this->belongsTo(Karat::class);
     }
 
-    public function stocks()
-    {
-        return $this->hasMany(Stock::class);
-    }
-
-    public function stockTotals()
-    {
-        return $this->hasOne(StockTotal::class);
-    }
-
     public function saleDetails()
     {
         return $this->hasMany(SaleDetail::class);
