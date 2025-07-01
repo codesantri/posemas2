@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->login(Login::class)
+            ->sidebarWidth('20rem')
             ->sidebarCollapsibleOnDesktop(true)
             // ->brandLogo(asset('logo-cetak.png'))
             ->favicon(asset('logo-cetak.png'))

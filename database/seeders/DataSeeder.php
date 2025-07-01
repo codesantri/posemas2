@@ -52,9 +52,9 @@ class DataSeeder extends Seeder
 
         // Karats
         DB::table('karats')->insert([
-            ['karat' => '24K', 'rate' => 99.9, 'buy_price' => 950000, 'sell_price' => 970000],
-            ['karat' => '22K', 'rate' => 91.6, 'buy_price' => 850000, 'sell_price' => 870000],
-            ['karat' => '18K', 'rate' => 75.0, 'buy_price' => 750000, 'sell_price' => 770000],
+            ['karat' => '24K', 'rate' => 99.9],
+            ['karat' => '22K', 'rate' => 91.6],
+            ['karat' => '18K', 'rate' => 75.0],
         ]);
 
         // // Suppliers

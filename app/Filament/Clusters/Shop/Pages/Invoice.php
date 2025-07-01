@@ -165,8 +165,7 @@ class Invoice extends Page
             } elseif ($this->transaction->exchange->change_type === "deduct") {
                 $this->urlName = "filament.admin.shop.resources.change-deducts.index";
             } elseif ($this->transaction->exchange->change_type === "change_model") {
-                $this->urlName = "Tukar Model";
-            }
+                $this->urlName = "filament.admin.shop.resources.change-models.index";            }
         } elseif ($this->transaction->transaction_type === "purchase") {
             $this->urlName = "filament.admin.shop.resources.purchases.index";
         } elseif ($this->transaction->transaction_type === "sale") {

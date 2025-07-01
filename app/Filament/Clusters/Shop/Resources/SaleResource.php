@@ -201,7 +201,7 @@ class SaleResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->latest(); // Urutkan berdasarkan created_at DESC
+            ->latest(); 
     }
 
 

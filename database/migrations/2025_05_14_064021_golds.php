@@ -35,8 +35,6 @@ return new class extends Migration
             $table->id();
             $table->string('karat');
             $table->decimal('rate', 5, 2);
-            $table->bigInteger('buy_price');
-            $table->bigInteger('sell_price');
             $table->timestamps();
         });
 

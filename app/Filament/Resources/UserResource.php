@@ -8,12 +8,10 @@ use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\UserResource\RelationManagers;
+use Filament\Tables\Actions\ActionGroup;
+
 
 class UserResource extends Resource
 {
@@ -33,7 +31,8 @@ class UserResource extends Resource
                     ->required()
                     ->minLength(3)
                     ->maxLength(100)
-                    ->rules(['regex:/^[a-zA-Z\s\.\']+$/']),
+                    ->rules(['regex:/^[a-zA-Z\s\.\']+$/'])
+                    ->columnSpanFull(),
 
                 TextInput::make('username')
                     ->label('Username')
@@ -42,7 +41,8 @@ class UserResource extends Resource
                     ->minLength(4)
                     ->maxLength(15)
                     ->telRegex('/^(\+62|62|0)8[1-9][0-9]{6,11}$/')
-                    ->unique(table: 'users', column: 'username'),
+                    ->unique(table: 'users', column: 'username')
+                    ->columnSpanFull(),
 
                 TextInput::make('password')
                     ->label('Kata Sandi')
@@ -51,15 +51,8 @@ class UserResource extends Resource
                     ->revealable()
                     ->minLength(4)
                     ->maxLength(64)
-                    ->dehydrated(true),
-                // ->visibleOn('create'),
-
-                Select::make('roles')
-                    ->label('Peran Pengguna')
-                    ->prefixIcon('heroicon-m-shield-check')
-                    ->relationship('roles', 'name')
-                    ->required()
-                    ->native(false),
+                    ->dehydrated(true)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -72,17 +65,16 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('username')
                     ->label('Username')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('roles.name')
-                    ->label('Peran Pengguna')
-                    ->searchable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
