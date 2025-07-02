@@ -179,6 +179,10 @@ trait SaleFormService
             });
 
             SaleDetail::insert($saleDetails->toArray());
+            // $carts = Cart::all();
+            // if (exists($cart)) {
+            //     $carts->delete();
+            // }
 
             DB::commit();
             return $sale->fresh(); // Return fresh instance with relationships
@@ -196,9 +200,136 @@ trait SaleFormService
         }
     }
 
-    // public static function editing(Model $record): array {}
+    public static function getEditing(Model $record): array
+    {
+        $items = [];
 
-    // public static function update(array $data): array {}
+        foreach ($record->saleDetails as $item) {
+            $itemData = [
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+            ];
+
+            $items[] = $itemData;
+        }
+
+        return [
+            ...$record->attributesToArray(),
+            'items' => $items,
+        ];
+    }
+
+    public static function getUpdate(Sale $sale, array $data): array
+    {
+
+        $totalOld = 0;
+        $errors = [];
+        $items = [];
+
+        if (!isset($data['items']) || !is_array($data['items'])) {
+            $errors[] = "Minimal satu produk lama harus diisi.";
+        } else {
+            foreach ($data['items'] as $item) {
+                if (empty($item['product_id'])) continue;
+
+                $product = Product::find($item['product_id']);
+                $productName = $product->name ?? ($item['product_name'] ?? "Tidak diketahui");
+
+                if (!$product) {
+                    $errors[] = "Produk lama '$productName' tidak ditemukan.";
+                    continue;
+                }
+
+                $qty = (int) ($item['quantity'] ?? 0);
+                $price = isset($item['price']) ? (int) preg_replace('/[^\d]/', '', $item['price']) : 0;
+
+                if ($qty <= 0) {
+                    $errors[] = "Quantity untuk produk lama '$productName' harus lebih dari 0.";
+                    continue;
+                }
+
+                if ($price <= 0) {
+                    $errors[] = "Harga untuk produk lama '$productName' harus lebih dari 0.";
+                    continue;
+                }
+
+                $subtotal = $qty * $price;
+                $totalOld += $subtotal;
+
+                $items[] = [
+                    'product_id' => $product->id,
+                    'quantity' => $qty,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                ];
+            }
+        }
+
+        if (empty($items)) {
+            $errors[] = "Minimal satu produk lama harus diisi.";
+        }
+
+        if (!empty($errors)) {
+            Notification::make()
+                ->title('Validasi Gagal')
+                ->danger()
+                ->body(implode("\n", $errors))
+                ->persistent()
+                ->send();
+
+            throw ValidationException::withMessages(['general' => $errors]);
+        }
+
+        $result = [
+            'customer_id' => $data['customer_id'],
+            'total_payment' => $totalOld,
+            'status' => $data['status'] ?? 'pending',
+            'items' => $items,
+        ];
+        return $result;
+    }
+
+    public static function getUpdating(Model $record, array $data): Model
+    {
+        DB::beginTransaction();
+
+        try {
+            // Update main sale record
+            $record->update([
+                'customer_id'   => $data['customer_id'],
+                'total_payment' => $data['total_payment'],
+            ]);
+
+            // Delete old sale details safely
+            $record->saleDetails()->delete();
+
+            // Recreate sale details
+            foreach ($data['items'] ?? [] as $item) {
+                SaleDetail::create([
+                    'sale_id'    => $record->id,
+                    'product_id' => $item['product_id'],
+                    'quantity'   => $item['quantity'],
+                    'price'      => $item['price'],
+                    'subtotal'   => $item['subtotal'],
+                ]);
+            }
+
+            DB::commit();
+
+            return $record->fresh(); // Return the updated model instance
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Notification::make()
+                ->title("Gagal memperbarui data.")
+                ->body("Terjadi kesalahan: " . $e->getMessage())
+                ->danger()
+                ->send();
+            throw $e;
+        }
+    }
+
 
     // public static function updating(array $data): array {}
+
 }

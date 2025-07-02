@@ -13,6 +13,7 @@ class TotalTransactions extends Widget
 {
     protected static string $view = 'filament.widgets.total-transactions';
     protected int | string | array $columnSpan = 'full';
+    
 
     protected function getViewData(): array
     {

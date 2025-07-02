@@ -1,13 +1,10 @@
 <?php
 
 namespace App\Models;
-
-use App\Traits\HasImageHandler;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use HasImageHandler;
     protected $guarded = [''];
     protected $casts = [
         'weight' => 'float',
@@ -47,12 +44,6 @@ class Product extends Model
     public function entrustDetails()
     {
         return $this->hasMany(EntrustDetail::class);
-    }
-
-
-    public function getImagePath(): ?string
-    {
-        return $this->image;
     }
 
     protected static function booted()

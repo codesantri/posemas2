@@ -19,7 +19,7 @@ class EditPurchase extends EditRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            PurchaseFormService::prepareFormData($record)
+            PurchaseFormService::getEditing($record)
         );
     }
 
@@ -30,7 +30,7 @@ class EditPurchase extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return PurchaseFormService::getRecordUpdate($record, $data);
+        return PurchaseFormService::getUpdating($record, $data);
     }
 
     protected function getHeaderActions(): array

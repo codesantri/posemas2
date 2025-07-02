@@ -115,16 +115,16 @@ trait PaymentService
                 break;
         }
 
-        self::getNotification($transaction->transaction_type, $transaction->invoice);
+        self::getNotification($transaction->transaction_type, $transaction->exchange->id);
 
         return redirect(Invoice::getUrl(['invoice' => $transaction->invoice]));
     }
 
 
-    public static function getNotification(string $transactionType, string $invoice): void
+    public static function getNotification(string $transactionType, int $id): void
     {
         if ($transactionType === "change") {
-            $changeModel = Change::where('invoice', $invoice)->first();
+            $changeModel = Change::where('id', $id)->first();
             $changeType = $changeModel?->change_type ?? 'default';
             $changeLabel = match ($changeType) {
                 'add' => 'Transaksi tukar tambah berhasil',

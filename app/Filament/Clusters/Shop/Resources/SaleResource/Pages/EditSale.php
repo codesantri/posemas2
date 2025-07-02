@@ -2,10 +2,14 @@
 
 namespace App\Filament\Clusters\Shop\Resources\SaleResource\Pages;
 
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
+use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Filament\Clusters\Shop\Resources\SaleResource;
-use Illuminate\Support\Facades\DB;
-use Filament\Notifications\Notification;
+use App\Traits\Filament\Services\Sale\SaleFormService;
 
 class EditSale extends EditRecord
 {
@@ -14,70 +18,42 @@ class EditSale extends EditRecord
     protected static ?string $title = 'Ubah Penjualan';
     protected static ?string $breadcrumb = '';
 
+    protected function fillForm(): void
+    {
+        $record = $this->getRecord();
+        $this->form->fill(
+            SaleFormService::getEditing($record)
+        );
+    }
+
     /**
      * Transform data sebelum mengisi form
      */
-    protected function mutateFormDataBeforeFill(array $data): array
+    protected function mutateFormDataBeforeSave(array $data): array
     {
-        /** @var \App\Models\Sale $record */
+        return SaleFormService::getUpdate($this->record, $data);
+    }
+
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        return SaleFormService::getUpdating($record, $data);
+    }
+
+
+    protected function getSaveFormAction(): Action
+    {
+        return SubmitAction::update();
+    }
+
+    protected function getHeaderActions(): array
+    {
         $record = $this->getRecord();
-
-        $data['items'] = $record->saleDetails->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'quantity' => $item->quantity,
-                'price' => $item->price,
-            ];
-        })->toArray();
-
-        return $data;
-    }
-
-    /**
-     * Handle update logic saat form disimpan
-     */
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
-    {
-        return DB::transaction(function () use ($record, $data) {
-            // 1. Hitung total pembayaran baru
-            $totalPayment = collect($data['items'])
-                ->sum(fn($item) => $item['quantity'] * $item['price']);
-
-            // 2. Update data sale
-            $record->update([
-                'customer_id' => $data['customer_id'] ?? null,
-                'total_payment' => $totalPayment,
-            ]);
-
-            // 3. Hapus semua detail lama
-            $record->saleDetails()->delete();
-
-            // 4. Insert ulang sale details baru
-            foreach ($data['items'] as $item) {
-                $record->saleDetails()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['quantity'] * $item['price'],
-                ]);
-            }
-            return $record;
-        });
-    }
-
-
-    protected function getSaveFormAction(): \Filament\Actions\Action
-    {
-        return parent::getSaveFormAction()
-            ->submit(null)
-            ->label('Simpan Perubahan')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi Pembaruan?')
-            ->modalSubheading('Pastikan perubahan data sudah benar sebelum melanjutkan.')
-            ->modalButton('Ya, Simpan')
-            ->action(function () {
-                $this->closeActionModal();
-                $this->save();
-            });
+        $invoice = optional($record->transaction)->invoice ?? null;
+        return [
+            HeaderAction::getGoPayment($invoice),
+            HeaderAction::getAddProductAction(),
+            HeaderAction::getAddCustomerAction(),
+            DeleteAction::make(),
+        ];
     }
 }

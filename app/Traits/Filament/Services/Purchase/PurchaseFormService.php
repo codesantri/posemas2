@@ -14,23 +14,6 @@ use Illuminate\Validation\ValidationException;
 
 trait PurchaseFormService
 {
-    /**
-     * Validasi & siapkan data pembelian.
-     */
-    /**
-     * Validasi & siapkan data pembelian.
-     */
-
-    // public static function create(array $data): array {}
-
-    // public static function creating(array $data): array {}
-
-    // public static function editing(Model $record): array {}
-
-    // public static function update(array $data): array {}
-
-    // public static function updating(array $data): array {}
-
     public static function getCreate(array $data): array
     {
         $totalPayment = 0;
@@ -156,7 +139,7 @@ trait PurchaseFormService
         }
     }
 
-    public static function prepareFormData(Model $record): array
+    public static function getEditing(Model $record): array
     {
         $items = [];
 
@@ -186,7 +169,6 @@ trait PurchaseFormService
      */
     public static function getUpdate(Purchase $purchase, array $data): array
     {
-        Log::info('Data mentah dari form (UPDATE):', $data);
 
         $totalOld = 0;
         $errors = [];
@@ -252,43 +234,35 @@ trait PurchaseFormService
             'status' => $data['status'] ?? 'pending',
             'items' => $items,
         ];
-
-        Log::info('Data setelah validasi dan perhitungan (UPDATE):', $result);
         return $result;
     }
-
-    /**
-     * Memperbarui record Change dan ChangeItems terkait.
-     *
-     * @param Model $record
-     * @param array $data
-     * @return Model
-     */
-    public static function getRecordUpdate(Model $record, array $data): Model
+    public static function getUpdating(Model $record, array $data): Model
     {
         DB::beginTransaction();
+
         try {
-            $purchase = $record;
+            // Update main sale record
+            $record->update([
+                'customer_id'   => $data['customer_id'],
+                'total_payment' => $data['total_payment'],
+            ]);
 
-            $purchase->customer_id = $data['customer_id'];
-            $purchase->total_payment = $data['total_payment'];
-            $purchase->status = $data['status'] ?? 'pending';
-            $purchase->save();
+            // Delete old sale details safely
+            $record->purchaseDetails()->delete();
 
-            $purchase->purchaseDetails()->delete();
-
+            // Recreate sale details
             foreach ($data['items'] ?? [] as $item) {
                 PurchaseDetail::create([
-                    'purchase_id' => $purchase->id,
+                    'purchase_id'    => $record->id,
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['subtotal'],
+                    'quantity'   => $item['quantity'],
+                    'price'      => $item['price'],
+                    'subtotal'   => $item['subtotal'],
                 ]);
             }
 
             DB::commit();
-            return $purchase;
+            return $record->fresh(); // Return the updated model instance
         } catch (\Exception $e) {
             DB::rollBack();
             Notification::make()
@@ -296,12 +270,6 @@ trait PurchaseFormService
                 ->body("Terjadi kesalahan: " . $e->getMessage())
                 ->danger()
                 ->send();
-
-            Log::error('Error saat memperbarui transaksi perubahan:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             throw $e;
         }
     }

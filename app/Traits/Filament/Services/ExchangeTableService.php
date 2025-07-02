@@ -16,7 +16,7 @@ trait ExchangeTableService
     public static function getTableSchemaForResource(string $context = 'add'): array
     {
         return [
-            Tables\Columns\TextColumn::make('invoice')
+            Tables\Columns\TextColumn::make('transaction.invoice')
                 ->label('Invoice')
                 ->searchable(),
 

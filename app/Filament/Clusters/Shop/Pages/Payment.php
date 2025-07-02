@@ -331,7 +331,7 @@ class Payment extends Page
         ]);
 
         Notification::make()
-            ->title('Terjadi kesalahan saat memproses Pembelian')
+            ->title('Terjadi kesalahan saat memproses Pembayaran')
             ->body($e->getMessage())
             ->danger()
             ->persistent()
