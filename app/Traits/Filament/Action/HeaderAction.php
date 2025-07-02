@@ -7,6 +7,7 @@ use App\Models\Karat;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\Transaction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
@@ -151,11 +152,59 @@ trait HeaderAction
 
     public static function getGoPayment($invoice): Action
     {
+        $transaction = Transaction::where('invoice', $invoice)->first();
+
+        // Cek jika transaksi tidak ada
+        if (!$transaction) {
+            return Action::make('gopayment')
+                ->disabled()
+                ->label('Transaksi tidak ditemukan');
+        }
+
         return Action::make('gopayment')
             ->color('success')
             ->icon('heroicon-o-credit-card')
             ->label('Proses Transaksi')
+            ->visible(function () use ($transaction) {
+                if ($transaction->transaction_type === "sale") {
+                    return optional($transaction->sale)->status === 'pending';
+                }
+                if ($transaction->transaction_type === "purchase") {
+                    return optional($transaction->purchase)->status === 'pending';
+                }
+                if ($transaction->transaction_type === "change") {
+                    return optional($transaction->change)->status === 'pending';
+                }
+                if ($transaction->transaction_type === "entrust") {
+                    return optional($transaction->entrust)->status === 'pending'
+                        && optional($transaction->entrust)->status_entrust === 'active';
+                }
+                return false;
+            })
             ->action(fn() => PaymentService::gotoPayment($invoice));
+    }
+
+
+    public static function getActivate($id): Action
+    {
+        return Action::make('activate')
+            ->label('Konfirmasi Titip Emas')
+            ->icon('heroicon-m-paper-airplane')
+            ->color('success')
+            ->visible(fn($record) => $record->status_entrust === 'unactive')
+            ->requiresConfirmation()
+            ->modalHeading('Konfirmasi')
+            ->modalDescription('Apakah kamu yakin mengkonfirmasi penitipan emas?')
+            ->modalButton('Ya, Lanjutkan')
+            ->action(function ($record) {
+                $record->update([
+                    'status_entrust' => 'active',
+                ]);
+                Notification::make()
+                    ->title('Konfirmasi titip emas berhasil')
+                    ->success()
+                    ->send();
+            });
     }
 
     public static function getMenu(): Action

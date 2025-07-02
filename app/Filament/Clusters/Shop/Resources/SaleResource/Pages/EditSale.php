@@ -61,14 +61,23 @@ class EditSale extends EditRecord
                     'subtotal' => $item['quantity'] * $item['price'],
                 ]);
             }
-
-            // 5. Nofikasi sukses
-            Notification::make()
-                ->title('Penjualan berhasil diperbarui')
-                ->success()
-                ->send();
-
             return $record;
         });
+    }
+
+
+    protected function getSaveFormAction(): \Filament\Actions\Action
+    {
+        return parent::getSaveFormAction()
+            ->submit(null)
+            ->label('Simpan Perubahan')
+            ->requiresConfirmation()
+            ->modalHeading('Konfirmasi Pembaruan?')
+            ->modalSubheading('Pastikan perubahan data sudah benar sebelum melanjutkan.')
+            ->modalButton('Ya, Simpan')
+            ->action(function () {
+                $this->closeActionModal();
+                $this->save();
+            });
     }
 }

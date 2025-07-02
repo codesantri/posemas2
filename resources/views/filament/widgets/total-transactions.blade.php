@@ -1,5 +1,5 @@
 <x-filament-widgets::widget>
-    <div class="flex grid-cols-1 md:grid-cols-2 gap-4 justify-center">
+    <div class="flex grid-cols-1 md:grid-cols-2 gap-4 ">
         @foreach ($data as $item)
         <x-filament::card>
             <h1 class="text-dark font-bold">{{$item['title']}}</h1>

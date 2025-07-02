@@ -2,14 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
 {
-    /** @use HasFactory<\Database\Factories\PurchaseFactory> */
-    use HasFactory;
-
     protected $guarded = [''];
 
     public function customer()
@@ -27,10 +23,15 @@ class Purchase extends Model
         return $this->hasMany(PurchaseDetail::class);
     }
 
- 
-
     public function transaction()
     {
         return $this->belongsTo(Transaction::class);
+    }
+
+    protected static function booted()
+    {
+        static::deleting(function ($purcashe) {
+            Transaction::where('id', $purcashe->transaction_id)->delete();
+        });
     }
 }

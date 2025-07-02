@@ -50,15 +50,13 @@ class ChangeAddResource extends Resource
             ->where('change_type', 'add')->latest();
     }
 
-
-
-
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListChangeAdds::route('/'),
             'create' => Pages\CreateChangeAdd::route('/create'),
             'edit' => Pages\EditChangeAdd::route('/{record}/edit'),
+            'view' => Pages\ViewChangeAdd::route('/{record}'),
         ];
     }
 }

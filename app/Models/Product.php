@@ -3,15 +3,11 @@
 namespace App\Models;
 
 use App\Traits\HasImageHandler;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProductFactory> */
-    use HasFactory, HasImageHandler;
+    use HasImageHandler;
     protected $guarded = [''];
     protected $casts = [
         'weight' => 'float',
@@ -48,23 +44,15 @@ class Product extends Model
         return $this->hasMany(ChangeItem::class);
     }
 
-    public function getHargaModalAttribute()
+    public function entrustDetails()
     {
-        return $this->karat
-            ? $this->karat->buy_price * floatval($this->weight)
-            : 0;
+        return $this->hasMany(EntrustDetail::class);
     }
 
-    public function getHargaJualAttribute()
-    {
-        return $this->karat
-            ? $this->karat->sell_price * floatval($this->weight)
-            : 0;
-    }
 
     public function getImagePath(): ?string
     {
-        return $this->image; // ganti sesuai nama kolom di DB, misal `image`, `image_path`, dll
+        return $this->image;
     }
 
     protected static function booted()

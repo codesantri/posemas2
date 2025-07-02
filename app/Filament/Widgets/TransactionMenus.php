@@ -48,7 +48,7 @@ class TransactionMenus extends Widget
 
             [
                 'title' => 'Titip Emas',
-                'route' => 'filament.admin.shop.resources.change-adds.index',
+                'route' => 'filament.admin.shop.resources.entrusts.index',
                 'icon' => 'icon/titip.png',
             ],
         ];

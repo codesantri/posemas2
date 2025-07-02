@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseDetail extends Model
+class EntrustDetail extends Model
 {
     protected $guarded = [''];
 
-    public function purchase()
+    public function entrust()
     {
-        return $this->belongsTo(Purchase::class);
+        return $this->belongsTo(Entrust::class);
     }
 
     public function product()

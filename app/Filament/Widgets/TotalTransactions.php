@@ -16,32 +16,55 @@ class TotalTransactions extends Widget
 
     protected function getViewData(): array
     {
-        $sales = Sale::with('transaction')->with('saleDetails')->where('status', 'success')->get();
-        $changeAdd = Change::where('change_type', 'add')->where('status', 'success')->with('transaction')->with('changeItems')->get();
-        $changeAdd = Change::where('change_type', 'add')->where('status', 'success')->with('transaction')->with('changeItems')->get();
-        $changeDeduct = Change::where('change_type', 'deduct')->where('status', 'success')->with('transaction')->with('changeItems')->get();
-        $changeModel = Change::where('change_type', 'change_model')->where('status', 'success')->with('transaction')->with('changeItems')->get();
-        $purchase = Purchase::with('transaction')->where('status', 'success')->get();
+        $sales = Sale::with(['transaction', 'saleDetails'])
+            ->where('status', 'success')
+            ->get();
 
+        $changeAdds = Change::with(['transaction', 'changeItems'])
+            ->where('change_type', 'add')
+            ->where('status', 'success')
+            ->get();
 
-        // Totalkan semua transaction->total
-        // Total In
+        $changeDeducts = Change::with(['transaction', 'changeItems'])
+            ->where('change_type', 'deduct')
+            ->where('status', 'success')
+            ->get();
+
+        $changeModels = Change::with(['transaction', 'changeItems'])
+            ->where('change_type', 'change_model')
+            ->where('status', 'success')
+            ->get();
+
+        $purchases = Purchase::with('transaction')
+            ->where('status', 'success')
+            ->get();
+
         $totalSale = $sales->sum(function ($sale) {
             return $sale->transaction?->total ?? 0;
         });
 
-        $totalChangeAdd = $changeAdd->sum(function ($changeAdd) {
+        $totalChangeAdd = $changeAdds->sum(function ($changeAdd) {
+            return $changeAdd->transaction?->total ?? 0;
+        });
+
+
+        $totalIn = $totalSale + $totalChangeAdd;
+        $totalMayam = 0;
+        $totalGram = 0;
+
+
+        $totalChangeAdd = $changeAdds->sum(function ($changeAdd) {
             return $changeAdd->transaction?->total ?? 0;
         });
 
         $totalIncome = $totalSale + $totalChangeAdd;
 
         // Total Out
-        $totalPurchase =  $purchase->sum(function ($purchase) {
+        $totalPurchase =  $purchases->sum(function ($purchase) {
             return  $purchase->transaction?->total ?? 0;
         });
 
-        $totalChangeDeduct = $changeDeduct->sum(function ($changeDeduct) {
+        $totalChangeDeduct = $changeDeducts->sum(function ($changeDeduct) {
             return $changeDeduct->transaction?->total ?? 0;
         });
 
@@ -50,16 +73,26 @@ class TotalTransactions extends Widget
 
         // Mayam dan Gram
 
-        $getMayam = $sales->flatMap(function ($sale) {
-            return $sale->saleDetails; // ini sudah collection of SaleDetail
+        $getGramSale = $sales->flatMap(function ($sale) {
+            return $sale->saleDetails;
         })->sum(function ($saleDetail) {
             return optional($saleDetail->product)->weight ?? 0;
         });
 
-        $getMayamIn = GeneralService::getMayam($getMayam);
+        $getGramChangeAdd = $changeAdds->flatMap(function ($changeAdd) {
+            return $changeAdd->changeItems;
+        })->sum(function ($changeItem) {
+            return optional($changeItem->product)->weight ?? 0;
+        });
+
+
+
+        $totalMayam = $getGramSale + $getGramChangeAdd;
+
+        $getMayamIn = GeneralService::getMayam($totalMayam);
         $getMayamOut = 0;
 
-        $getGramIn = $getMayam;
+        $getGramIn = $getGramSale;
         $getGramOut = 0;
 
         $getMayamTotal = $getMayamIn + $getMayamOut ?? 0;

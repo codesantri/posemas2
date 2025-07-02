@@ -30,6 +30,7 @@ trait PaymentService
             },
             'sale' => 'Transaksi Penjualan',
             'purchase' => 'Transaksi Pembelian',
+            'entrust' => 'Transaksi Titip Emas',
             default => 'Transaksi',
         };
     }
@@ -58,6 +59,12 @@ trait PaymentService
 
             case 'change':
                 if ($transaction->exchange && $transaction->exchange->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
+
+            case 'entrust':
+                if ($transaction->entrust && $transaction->entrust->status === 'success') {
                     $alreadyProcessed = true;
                 }
                 break;
@@ -94,6 +101,13 @@ trait PaymentService
 
             case 'sale':
                 $transaction->sale?->update(['status' => 'success']);
+                break;
+
+            case 'entrust':
+                $transaction->entrust?->update([
+                    'status_entrust' => 'end',
+                    'status' => 'success'
+                ]);
                 break;
 
             case 'change':
@@ -137,6 +151,13 @@ trait PaymentService
             case 'sale':
                 Notification::make()
                     ->title('Transaksi penjualan emas berhasil')
+                    ->success()
+                    ->send();
+                break;
+
+            case 'entrust':
+                Notification::make()
+                    ->title('Transaksi titip emas berhasil')
                     ->success()
                     ->send();
                 break;

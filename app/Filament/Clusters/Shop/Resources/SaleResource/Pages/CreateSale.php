@@ -2,85 +2,27 @@
 
 namespace App\Filament\Clusters\Shop\Resources\SaleResource\Pages;
 
-use App\Models\Cart;
-use App\Models\Sale;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\DB;
-use Filament\Notifications\Notification;
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Filament\Clusters\Shop\Pages\Payment;
-use App\Traits\Filament\Services\PaymentService;
 use App\Filament\Clusters\Shop\Resources\SaleResource;
+use App\Traits\Filament\Services\Sale\SaleFormService;
 
 class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
     protected static ?string $title = 'Daftar Penjualan';
     protected static ?string $breadcrumb = '';
+    use SaleFormService;
 
     public ?array $data = [];
 
     public function mount(): void
     {
-        parent::mount();
-
-        $carts = Cart::with('product')->get();
-
-        if ($carts->isEmpty()) {
-            $this->redirect(url()->previous() ?? SaleResource::getUrl());
-        }
-
-        $this->form->fill([
-            'items' => $carts->map(fn($cart) => [
-                'cart_id' => $cart->id,
-                'product_id' => $cart->product_id,
-                'quantity' => $cart->quantity,
-                'price' => null,
-            ])->toArray(),
-        ]);
-    }
-
-    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
-    {
-        return DB::transaction(function () use ($data) {
-            // Hitung total payment
-            $totalPayment = collect($data['items'])
-                ->sum(fn($item) => $item['quantity'] * $item['price']);
-
-            // Buat transaksi
-            $transaction = Transaction::create([
-                'transaction_type' => 'sale',
-                'payment_method' => $data['payment_method'] ?? 'cash',
-            ]);
-
-            // Buat sales
-            $sale = Sale::create([
-                'customer_id' => $data['customer_id'] ?? null,
-                'transaction_id' => $transaction->id,
-                'total_payment' => $totalPayment,
-            ]);
-
-            // Detail
-            foreach ($data['items'] as $item) {
-                $sale->saleDetails()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['quantity'] * $item['price'],
-                ]);
-
-                if (isset($item['cart_id'])) {
-                    Cart::where('id', $item['cart_id'])->delete();
-                }
-            }
-            return $sale;
-        });
-    }
-
-    public static function canCreateAnother(): bool
-    {
-        return false;
+        $this->mounting();
     }
 
     protected function getHeaderActions(): array
@@ -90,19 +32,24 @@ class CreateSale extends CreateRecord
         ];
     }
 
-    protected function getCreateFormAction(): \Filament\Actions\Action
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return parent::getCreateFormAction()
-            ->submit(null)
-            ->label('Proses Penjualan')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi?')
-            ->modalSubheading('Untuk menghindari kesalahan, mohon cek ulang data Anda.')
-            ->modalButton('Ya, Lanjutkan')
-            ->action(function () {
-                $this->create();
-                $this->closeActionModal();
-            });
+        return SaleFormService::getCreate($data);
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        return SaleFormService::handleCreate($data);
+    }
+
+    public static function canCreateAnother(): bool
+    {
+        return false;
+    }
+
+    protected function getCreateFormAction(): Action
+    {
+        return SubmitAction::create();
     }
 
     protected function getRedirectUrl(): string

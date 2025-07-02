@@ -9,13 +9,13 @@ use Filament\Pages\Page;
 use App\Filament\Clusters\Shop;
 use Filament\Pages\SubNavigationPosition;
 use App\Traits\Filament\Action\HeaderAction;
-use App\Traits\Filament\Services\Sale\SaleService;
+use App\Traits\Filament\Services\Sale\SaleFormService;
 
 class ShopPage extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static string $view = 'filament.clusters.shop.pages.shop-page';
+    protected static string $view = 'filament.pages.shop.products';
 
     protected static ?string $cluster = Shop::class;
 
@@ -71,7 +71,7 @@ class ShopPage extends Page
 
     public function addToCart($id)
     {
-        SaleService::addToCart($id);
+        SaleFormService::addToCart($id);
         $this->countOrder();
     }
 
@@ -86,7 +86,6 @@ class ShopPage extends Page
         if (empty($gram) || $gram <= 0) {
             return 0;
         }
-
         return round($gram / 3.35, 2);
     }
 

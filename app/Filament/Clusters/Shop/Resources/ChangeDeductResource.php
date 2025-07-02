@@ -2,21 +2,17 @@
 
 namespace App\Filament\Clusters\Shop\Resources;
 
-use Filament\Forms;
 use Filament\Tables;
 use App\Models\Change;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use App\Models\ChangeDeduct;
 use Filament\Resources\Resource;
 use App\Filament\Clusters\Shop;
 use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\Filament\Services\ExchangeService;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Traits\Filament\Services\ExchangeTableService;
 use App\Filament\Clusters\Shop\Resources\ChangeDeductResource\Pages;
-use App\Filament\Clusters\Shop\Resources\ChangeDeductResource\RelationManagers;
 
 class ChangeDeductResource extends Resource
 {
@@ -61,6 +57,7 @@ class ChangeDeductResource extends Resource
         return [
             'index' => Pages\ListChangeDeducts::route('/'),
             'create' => Pages\CreateChangeDeduct::route('/create'),
+            'view' => Pages\ViewChangeDeduct::route('/{record}'),
             'edit' => Pages\EditChangeDeduct::route('/{record}/edit'),
         ];
     }

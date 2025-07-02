@@ -2,18 +2,21 @@
 
 namespace App\Filament\Clusters\Shop\Resources\PurchaseResource\Pages;
 
-use Filament\Actions\Action;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Pages\Actions\EditAction;
 use Filament\Pages\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
+use Filament\Resources\Pages\ViewRecord;
 use App\Traits\Filament\Action\HeaderAction;
-use App\Traits\Filament\Action\SubmitAction;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource;
 use App\Traits\Filament\Services\Purchase\PurchaseFormService;
 
-class EditPurchase extends EditRecord
+class ViewPurchase extends ViewRecord
 {
     protected static string $resource = PurchaseResource::class;
+
+    protected static ?string $title = 'Detail Pembelian';
+
+
+
 
     protected function fillForm(): void
     {
@@ -23,30 +26,14 @@ class EditPurchase extends EditRecord
         );
     }
 
-    public function mutateFormDataBeforeSave(array $data): array
-    {
-        return PurchaseFormService::getUpdate($this->record, $data);
-    }
-
-    protected function handleRecordUpdate(Model $record, array $data): Model
-    {
-        return PurchaseFormService::getRecordUpdate($record, $data);
-    }
-
     protected function getHeaderActions(): array
     {
         $record = $this->getRecord();
         $invoice = optional($record->transaction)->invoice ?? null;
         return [
             HeaderAction::getGoPayment($invoice),
-            HeaderAction::getAddProductAction(),
-            HeaderAction::getAddCustomerAction(),
+            EditAction::make(),
             DeleteAction::make(),
         ];
-    }
-
-    protected function getSaveFormAction(): Action
-    {
-        return SubmitAction::update();
     }
 }

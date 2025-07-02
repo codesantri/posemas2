@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Filament\Forms\FormInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Illuminate\Validation\ValidationException;
@@ -27,31 +28,22 @@ trait ExchangeService
             Section::make('Proses Pertukaran Emas')
                 ->description('Silahkan isi data dibawah ini untuk melakukan pertukaran emas.')
                 ->schema([
-                    Select::make('customer_id')
-                        ->label('Nama Pelanggan')
-                        ->searchable()
-                        ->required()
-                        ->preload()
-                        ->options(fn() => Customer::orderBy('id', 'desc')->get()->mapWithKeys(fn($customer) => [
-                            $customer->id => "{$customer->name} -  {$customer->phone} - {$customer->address}"
-                        ]))
-                        ->columnSpanFull(),
-                    // Pastikan Hidden field change_type didefinisikan dengan benar
+                    ...FormInput::selectCustomer('customer_id'),
                     Hidden::make('change_type')->default($type)->required()->dehydrated(true),
                     Grid::make(2)->schema([
                         Repeater::make('olds')
                             ->label('Produk Lama')
                             ->schema(self::productRepeaterSchema())
                             ->addActionLabel('Tambah Produk Lama') // Lebih deskriptif
-                            ->minItems(1) // Minimal satu produk lama harus diisi
-                            ->required(), // Wajib diisi
+                            ->minItems(1)
+                            ->required(),
 
                         Repeater::make('news')
                             ->label('Produk Baru')
                             ->schema(self::productRepeaterSchema())
                             ->addActionLabel('Tambah Produk Baru') // Lebih deskriptif
                             ->minItems(1) // Minimal satu produk baru harus diisi
-                            ->required(), // Wajib diisi
+                            ->required(),
                     ]),
                 ])
         ];
@@ -60,42 +52,10 @@ trait ExchangeService
     private static function productRepeaterSchema(): array
     {
         return [
-            Select::make("product_id")
-                ->label('Nama Produk')
-                ->searchable()
-                ->required()
-                ->preload()
-                ->options(fn() => Product::with(['karat', 'category', 'type'])
-                    ->latest()->get()->mapWithKeys(fn($product) => [
-                        $product->id => "{$product->name} / {$product->karat->karat}-{$product->karat->rate}% / {$product->category->name} / {$product->type->name}"
-                    ]))
-                ->columnSpanFull(),
-
+            ...FormInput::selectProduct('produk_id'),
             Grid::make(2)->schema([
-                TextInput::make("quantity")
-                    ->label('Jumlah')
-                    ->numeric()
-                    ->default(1)
-                    ->required()
-                    ->minValue(1), // Pastikan quantity minimal 1
-
-                TextInput::make("price")
-                    ->label('Harga')
-                    ->prefix('Rp')
-                    ->inputMode('decimal')
-                    ->extraAttributes([
-                        'x-data' => '{}',
-                        'x-init' => <<<JS
-                            \$el.addEventListener('input', function(e) {
-                                let value = e.target.value.replace(/[^\\d]/g, '')
-                                value = new Intl.NumberFormat('id-ID').format(value)
-                                e.target.value = value
-                            })
-                        JS,
-                    ])
-                    ->dehydrateStateUsing(fn($state) => (int) preg_replace('/[^\d]/', '', $state))
-                    ->required()
-                    ->minValue(1),
+                ...FormInput::inputQuantity('quantity'),
+                ...FormInput::inputPrice('price'),
             ])
         ];
     }
@@ -110,8 +70,6 @@ trait ExchangeService
         $news = [];
         $errors = [];
 
-        // Validasi & proses barang lama (olds)
-        // Pastikan 'olds' ada dan merupakan array
         if (!isset($data['olds']) || !is_array($data['olds'])) {
             $errors[] = "Minimal satu produk lama harus diisi.";
         } else {
@@ -316,6 +274,7 @@ trait ExchangeService
         }
     }
 
+    // Update
     public static function prepareFormData(Model $record): array
     {
         $olds = [];

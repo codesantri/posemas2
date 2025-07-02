@@ -57,6 +57,7 @@ class ChangeModelResource extends Resource
         return [
             'index' => Pages\ListChangeModels::route('/'),
             'create' => Pages\CreateChangeModel::route('/create'),
+            'view' => Pages\ViewChangeModel::route('/{record}'),
             'edit' => Pages\EditChangeModel::route('/{record}/edit'),
         ];
     }

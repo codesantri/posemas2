@@ -14,6 +14,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
+use App\Traits\Filament\Forms\FormInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\SubNavigationPosition;
@@ -43,52 +44,15 @@ class SaleResource extends Resource
                     ->schema([
                         ...SelectAction::getSelectCustomer('customer_id'),
                         Repeater::make('items')
-                            ->label('Item Belanja')
+                            ->label('Daftar belanja')
                             ->disableItemCreation()
                             ->disableItemDeletion()
                             ->schema([
-                                Grid::make(12)->schema([
-                                    \Filament\Forms\Components\View::make('components.product-image')
-                                        ->label('') // Kosongkan label biar clean
-                                        ->columnSpan(2)
-                                        ->viewData(fn($get) => [
-                                            'product' => \App\Models\Product::find(
-                                                $get('product_id')
-                                            ),
-                                        ])->columnSpan(4),
+                                ...FormInput::selectProduct('produk_id'),
+                                Grid::make(2)->schema([
+                                    ...FormInput::inputQuantity('quantity'),
+                                    ...FormInput::inputPrice('price'),
 
-                                    Hidden::make('product_id')
-                                        ->label('Jumlah')
-                                        ->required()
-                                        ->columnSpan(1),
-
-
-                                    TextInput::make('quantity')
-                                        ->label('Jumlah')
-                                        ->numeric()
-                                        ->required()
-                                        ->minValue(1)
-                                        ->default(1)
-                                        ->columnSpan(1),
-
-                                    TextInput::make("price")
-                                        ->label('Harga')
-                                        ->prefix('Rp')
-                                        ->inputMode('decimal')
-                                        ->extraAttributes([
-                                            'x-data' => '{}',
-                                            'x-init' => <<<JS
-                                        \$el.addEventListener('input', function(e) {
-                                            let value = e.target.value.replace(/[^\\d]/g, '')
-                                            value = new Intl.NumberFormat('id-ID').format(value)
-                                            e.target.value = value
-                                        })
-                                    JS,
-                                        ])
-                                        ->dehydrateStateUsing(fn($state) => (int) preg_replace('/[^\d]/', '', $state))
-                                        ->required()
-                                        ->minValue(1)
-                                        ->columnSpan(5),
                                     \Filament\Forms\Components\Actions::make([
                                         \Filament\Forms\Components\Actions\Action::make('delete')
                                             ->label('Hapus')
@@ -201,7 +165,7 @@ class SaleResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->latest(); 
+            ->latest();
     }
 
 

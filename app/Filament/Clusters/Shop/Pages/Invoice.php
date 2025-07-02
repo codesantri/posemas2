@@ -95,7 +95,7 @@ class Invoice extends Page
                         Grid::make(1)
                             ->schema([
                                 \Filament\Infolists\Components\ViewEntry::make('paymentDetails')
-                                    ->view('filament.pages.shop.change.payment-detail')
+                                    ->view('filament.pages.shop.payment-details')
                                     ->viewData([
                                         'invoice' => $this->transaction->invoice ?? 'N/A',
                                         'customer' => $this->customerName,
@@ -165,11 +165,14 @@ class Invoice extends Page
             } elseif ($this->transaction->exchange->change_type === "deduct") {
                 $this->urlName = "filament.admin.shop.resources.change-deducts.index";
             } elseif ($this->transaction->exchange->change_type === "change_model") {
-                $this->urlName = "filament.admin.shop.resources.change-models.index";            }
+                $this->urlName = "filament.admin.shop.resources.change-models.index";
+            }
         } elseif ($this->transaction->transaction_type === "purchase") {
             $this->urlName = "filament.admin.shop.resources.purchases.index";
         } elseif ($this->transaction->transaction_type === "sale") {
             $this->urlName = "filament.admin.shop.resources.sales.index";
+        } elseif ($this->transaction->transaction_type === "entrust") {
+            $this->urlName = "filament.admin.shop.resources.entrusts.index";
         }
     }
 
@@ -206,6 +209,8 @@ class Invoice extends Page
             $this->urlPrint = "print.purchase";
         } elseif ($this->transaction->transaction_type === "sale") {
             $this->urlPrint = "print.sale";
+        } elseif ($this->transaction->transaction_type === "entrust") {
+            $this->urlPrint = "print.entrust";
         }
     }
 }

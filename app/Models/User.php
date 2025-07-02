@@ -5,13 +5,12 @@ namespace App\Models;
 use Filament\Panel;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use Notifiable;
+    protected $guarded = [''];
 
     public function canAccessPanel(Panel $panel): bool
     {
@@ -23,7 +22,6 @@ class User extends Authenticatable implements FilamentUser
      *
      * @var list<string>
      */
-    protected $guarded = [''];
 
 
     /**

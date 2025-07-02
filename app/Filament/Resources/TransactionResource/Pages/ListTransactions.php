@@ -65,6 +65,11 @@ class ListTransactions extends ListRecords
                             $q->where('change_type', 'change_model');
                         })
                 ),
+            'entrust' => Tab::make('Titip Emas')
+                ->modifyQueryUsing(
+                    fn(Builder $query) =>
+                    $query->where('transaction_type', 'entrust')
+                ),
         ];
     }
 

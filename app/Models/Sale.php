@@ -4,11 +4,9 @@ namespace App\Models;
 
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Sale extends Model
 {
-    use HasFactory;
     protected $guarded = [''];
 
     public function customer()
@@ -30,5 +28,12 @@ class Sale extends Model
     public function transaction()
     {
         return $this->belongsTo(Transaction::class);
+    }
+
+    protected static function booted()
+    {
+        static::deleting(function ($sale) {
+            Transaction::where('id', $sale->transaction_id)->delete();
+        });
     }
 }

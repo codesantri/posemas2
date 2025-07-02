@@ -2,11 +2,11 @@
 
 namespace App\Filament\Clusters\Shop\Resources\PurchaseResource\Pages;
 
-use Filament\Actions;
-use Illuminate\Support\Facades\Log;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource;
 use App\Traits\Filament\Services\Purchase\PurchaseFormService;
 
@@ -39,10 +39,8 @@ class CreatePurchase extends CreateRecord
         return false;
     }
 
-    protected function getCreateFormAction(): Actions\Action
+    protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()
-            ->label('Simpan & Proses Pembelian')
-            ->icon('heroicon-m-credit-card');
+        return SubmitAction::create();
     }
 }

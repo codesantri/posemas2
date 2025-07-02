@@ -74,6 +74,11 @@ class Payment extends Page
                     $alreadyProcessed = true;
                 }
                 break;
+            case 'entrust':
+                if ($this->transaction->entrust && $this->transaction->entrust->status === 'success') {
+                    $alreadyProcessed = true;
+                }
+                break;
 
             case 'change':
                 if ($this->transaction->exchange && $this->transaction->exchange->status === 'success') {
@@ -118,6 +123,8 @@ class Payment extends Page
             $this->subtotal = $this->transaction->sale->total_payment ?? 0;
         } elseif ($this->transactionType === 'purchase') {
             $this->subtotal = $this->transaction->purchase->total_payment ?? 0;
+        } elseif ($this->transactionType === 'entrust') {
+            $this->subtotal = $this->transaction->entrust->total_payment ?? 0;
         }
         $this->recalculateAll();
     }
@@ -171,7 +178,7 @@ class Payment extends Page
                     Placeholder::make('orders')
                         ->label('')
                         ->content(fn() => new HtmlString(
-                            view('filament.pages.shop.change.payment-detail', [
+                            view('filament.pages.shop.payment-details', [
                                 'invoice' => $this->transaction->invoice,
                                 'customer' => $this->customerName,
                                 'cashier' => $this->cashierName,
@@ -193,7 +200,7 @@ class Payment extends Page
         return Placeholder::make('counter')
             ->label('')
             ->content(fn() => new HtmlString(
-                view('filament.pages.shop.change.counter', [
+                view('filament.pages.shop.counter', [
                     'type' => $this->typeChange,
                     'method' => $this->data['payment_method'] ?? 'cash',
                 ])->render()

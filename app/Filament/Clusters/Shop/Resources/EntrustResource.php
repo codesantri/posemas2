@@ -3,37 +3,36 @@
 namespace App\Filament\Clusters\Shop\Resources;
 
 use Filament\Tables;
-use App\Models\Customer;
-use App\Models\Purchase;
+use App\Models\Entrust;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Filament\Clusters\Shop;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
 use App\Traits\Filament\Forms\FormInput;
-use Filament\Forms\Components\TextInput;
 use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\Filament\Action\SelectAction;
 use App\Traits\Filament\Action\TableActions;
-use App\Filament\Clusters\Shop\Resources\PurchaseResource\Pages;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Clusters\Shop\Resources\EntrustResource\Pages;
+use App\Filament\Clusters\Shop\Resources\EntrustResource\RelationManagers;
 
-class PurchaseResource extends Resource
+class EntrustResource extends Resource
 {
-    protected static ?string $model = Purchase::class;
+    protected static ?string $model = Entrust::class;
+    protected static ?string $cluster = Shop::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
-    protected static ?string $navigationLabel = "Pembelian";
-    protected static ?string $breadcrumb = 'Pembelian';
-    protected static ?string $label = 'Pembelian';
+    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static ?string $navigationLabel = "Titip Emas";
+    protected static ?string $breadcrumb = 'Titip Emas';
+    protected static ?string $label = 'Titip Emas';
     protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 
 
-    protected static ?string $cluster = Shop::class;
 
     public static function form(Form $form): Form
     {
@@ -55,7 +54,6 @@ class PurchaseResource extends Resource
                 ]),
             ]);
     }
-
 
     public static function table(Table $table): Table
     {
@@ -82,6 +80,26 @@ class PurchaseResource extends Resource
                         'failed' => 'danger',
                     ][$state] ?? 'gray')
                     ->label('Status'),
+
+                TextColumn::make('status_entrust')
+                    ->label('Status Titip')
+                    ->badge()
+                    ->color(fn($state) => [
+                        'unactive' => 'info',
+                        'active' => 'warning',
+                        'end' => 'success',
+                    ][$state] ?? 'gray')
+                    ->icon(fn($state) => [
+                        'unactive' => 'heroicon-o-clock',
+                        'active' => 'heroicon-o-bolt',
+                        'end' => 'heroicon-o-check-circle',
+                    ][$state] ?? 'heroicon-o-question-mark-circle')
+                    ->formatStateUsing(fn($state) => [
+                        'unactive' => 'Menunggu Konfirmasi',
+                        'active' => 'Aktif',
+                        'end' => 'Berhasil',
+                    ][$state] ?? 'Tidak Diketahui'),
+
                 TextColumn::make('transaction.payment_method')
                     ->label('Pembayaran')
                     ->badge()
@@ -123,11 +141,10 @@ class PurchaseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPurchases::route('/'),
-            'create' => Pages\CreatePurchase::route('/create'),
-            'view' => Pages\ViewPurchase::route('/{record}'),
-            'edit' => Pages\EditPurchase::route('/{record}/edit'),
+            'index' => Pages\ListEntrusts::route('/'),
+            'create' => Pages\CreateEntrust::route('/create'),
+            'view' => Pages\ViewEntrust::route('/{record}'),
+            'edit' => Pages\EditEntrust::route('/{record}/edit'),
         ];
     }
-
 }

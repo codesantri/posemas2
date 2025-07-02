@@ -20,18 +20,27 @@ trait PurchaseFormService
     /**
      * Validasi & siapkan data pembelian.
      */
+
+    // public static function create(array $data): array {}
+
+    // public static function creating(array $data): array {}
+
+    // public static function editing(Model $record): array {}
+
+    // public static function update(array $data): array {}
+
+    // public static function updating(array $data): array {}
+
     public static function getCreate(array $data): array
     {
-        Log::info('Data mentah dari form:', $data);
-
         $totalPayment = 0;
-        $products = [];
+        $items = [];
         $errors = [];
 
-        if (!isset($data['products']) || !is_array($data['products'])) {
+        if (!isset($data['items']) || !is_array($data['items'])) {
             $errors[] = "Minimal satu produk harus diisi.";
         } else {
-            foreach ($data['products'] as $item) {
+            foreach ($data['items'] as $item) {
                 if (!isset($item['product_id']) || is_null($item['product_id'])) {
                     continue; // Baris kosong
                 }
@@ -61,7 +70,7 @@ trait PurchaseFormService
                 $subtotal = $qty * $price;
                 $totalPayment += $subtotal;
 
-                $products[] = [
+                $items[] = [
                     'product_id' => $product->id,
                     'quantity' => $qty,
                     'price' => $price,
@@ -70,7 +79,7 @@ trait PurchaseFormService
             }
         }
 
-        if (empty($products)) {
+        if (empty($items)) {
             $errors[] = "Minimal satu produk harus diisi.";
         }
 
@@ -91,10 +100,9 @@ trait PurchaseFormService
             'customer_id' => $data['customer_id'],
             'total_payment' => $totalPayment,
             'status' => 'pending',
-            'products' => $products,
+            'items' => $items,
         ];
     }
-
 
     /**
      * Simpan transaksi pembelian.
@@ -118,7 +126,7 @@ trait PurchaseFormService
             $purchase->save();
 
             // Simpan detail produk
-            foreach ($data['products'] ?? [] as $item) {
+            foreach ($data['items'] ?? [] as $item) {
                 PurchaseDetail::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $item['product_id'],
@@ -150,7 +158,7 @@ trait PurchaseFormService
 
     public static function prepareFormData(Model $record): array
     {
-        $products = [];
+        $items = [];
 
         foreach ($record->purchaseDetails as $item) {
             $itemData = [
@@ -159,12 +167,12 @@ trait PurchaseFormService
                 'price' => $item->price,
             ];
 
-            $products[] = $itemData;
+            $items[] = $itemData;
         }
 
         return [
             ...$record->attributesToArray(),
-            'products' => $products,
+            'items' => $items,
         ];
     }
 
@@ -182,12 +190,12 @@ trait PurchaseFormService
 
         $totalOld = 0;
         $errors = [];
-        $products = [];
+        $items = [];
 
-        if (!isset($data['products']) || !is_array($data['products'])) {
+        if (!isset($data['items']) || !is_array($data['items'])) {
             $errors[] = "Minimal satu produk lama harus diisi.";
         } else {
-            foreach ($data['products'] as $item) {
+            foreach ($data['items'] as $item) {
                 if (empty($item['product_id'])) continue;
 
                 $product = Product::find($item['product_id']);
@@ -214,7 +222,7 @@ trait PurchaseFormService
                 $subtotal = $qty * $price;
                 $totalOld += $subtotal;
 
-                $products[] = [
+                $items[] = [
                     'product_id' => $product->id,
                     'quantity' => $qty,
                     'price' => $price,
@@ -223,7 +231,7 @@ trait PurchaseFormService
             }
         }
 
-        if (empty($products)) {
+        if (empty($items)) {
             $errors[] = "Minimal satu produk lama harus diisi.";
         }
 
@@ -242,13 +250,12 @@ trait PurchaseFormService
             'customer_id' => $data['customer_id'],
             'total_payment' => $totalOld,
             'status' => $data['status'] ?? 'pending',
-            'products' => $products,
+            'items' => $items,
         ];
 
         Log::info('Data setelah validasi dan perhitungan (UPDATE):', $result);
         return $result;
     }
-
 
     /**
      * Memperbarui record Change dan ChangeItems terkait.
@@ -270,7 +277,7 @@ trait PurchaseFormService
 
             $purchase->purchaseDetails()->delete();
 
-            foreach ($data['products'] ?? [] as $item) {
+            foreach ($data['items'] ?? [] as $item) {
                 PurchaseDetail::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $item['product_id'],

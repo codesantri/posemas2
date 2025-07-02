@@ -15,7 +15,6 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
-
     public function sale()
     {
         return $this->hasOne(Sale::class);
@@ -26,9 +25,9 @@ class Transaction extends Model
         return $this->hasOne(Purchase::class);
     }
 
-    public function pawning()
+    public function entrust()
     {
-        return $this->hasOne(Pawning::class);
+        return $this->hasOne(Entrust::class);
     }
 
     public function exchange()
@@ -49,7 +48,7 @@ class Transaction extends Model
             $prefixes = [
                 'sale' => 'SL',
                 'purchase' => 'PRC',
-                'pawning' => 'PW',
+                'entrust' => 'ENT',
                 'change' => 'CHG',
             ];
             $prefix = $prefixes[$transaction->transaction_type] ?? 'TRX';
@@ -67,11 +66,5 @@ class Transaction extends Model
                 $transaction->user_id = Auth::id();
             }
         });
-
-        // static::deleting(function ($transaction) {
-        //     if ($transaction->transaction_type === 'purchase') {
-        //         \App\Models\Purchase::where('transaction_id', $transaction->id)->delete();
-        //     }
-        // });
     }
 }

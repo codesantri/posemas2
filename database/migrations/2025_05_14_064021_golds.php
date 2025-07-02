@@ -58,9 +58,9 @@ return new class extends Migration
 
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('invoice');
+            $table->string('invoice')->unique();
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->enum('transaction_type', ['sale', 'purchase', 'pawning', 'change']);
+            $table->enum('transaction_type', ['sale', 'purchase', 'change', 'entrust']);
             $table->enum('payment_method', ['cash', 'online'])->default('cash');
             $table->bigInteger('cash')->default(0);
             $table->bigInteger('change')->default(0);
@@ -109,39 +109,8 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('pawnings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade')->onUpdate('cascade');
-            $table->date('pawn_date');
-            $table->bigInteger('estimated_value')->default(0);
-            $table->decimal('rate', 5, 2);
-            $table->date('due_date');
-            $table->bigInteger('cash')->default(0);
-            $table->bigInteger('change')->default(0);
-            $table->enum('status', ['pending', 'active', 'paid_off'])->default('pending');
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('pawning_details', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->foreignId('pawning_id')->constrained('pawnings')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
-            $table->foreignId('type_id')->constrained('types')->onDelete('cascade');
-            $table->foreignId('karat_id')->constrained('karats')->onDelete('cascade');
-            $table->decimal('weight', 10, 2);
-            $table->integer('quantity');
-            $table->string('image')->nullable();
-            $table->timestamps();
-        });
-
-
         Schema::create('changes', function (Blueprint $table) {
             $table->id();
-            $table->string('invoice')->unique();
             $table->foreignId('transaction_id')->nullable()->constrained('transactions')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('set null');
             $table->enum('change_type', ['add', 'deduct', 'change_model']);
@@ -160,6 +129,26 @@ return new class extends Migration
             $table->bigInteger('subtotal')->default(0);
             $table->timestamps();
         });
+
+        Schema::create('entrusts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('transaction_id')->nullable()->constrained('transactions')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('set null');
+            $table->bigInteger('total_payment')->default(0);
+            $table->enum('status_entrust', ['unactive', 'active', 'end'])->default('unactive');
+            $table->enum('status', ['pending', 'success', 'failed'])->default('pending');
+            $table->timestamps();
+        });
+
+        Schema::create('entrust_details', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('entrust_id')->constrained('entrusts')->onDelete('cascade');
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->integer('quantity');
+            $table->bigInteger('price')->default(0);
+            $table->bigInteger('subtotal')->default(0);
+            $table->timestamps();
+        });
     }
 
     /**
@@ -167,23 +156,27 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Pertukaran
+        Schema::dropIfExists('entrust_details');
+        Schema::dropIfExists('entrusts');
+
         Schema::dropIfExists('change_items');
         Schema::dropIfExists('changes');
 
-        // Schema::dropIfExists('order_services');
-        Schema::dropIfExists('pawning_details');
-        Schema::dropIfExists('pawnings');
         Schema::dropIfExists('purchase_details');
-        Schema::dropIfExists('sale_details');
         Schema::dropIfExists('purchases');
-        Schema::dropIfExists('transactions');
+
+        Schema::dropIfExists('sale_details');
         Schema::dropIfExists('sales');
+
+        Schema::dropIfExists('transactions');
+
         Schema::dropIfExists('carts');
+
         Schema::dropIfExists('products');
         Schema::dropIfExists('karats');
         Schema::dropIfExists('types');
         Schema::dropIfExists('categories');
+
         Schema::dropIfExists('customers');
     }
 };

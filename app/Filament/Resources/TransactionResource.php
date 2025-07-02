@@ -145,7 +145,7 @@ class TransactionResource extends Resource
                             'sale' => self::deleteSale($record),
                             'purchase' => self::deletePurchase($record),
                             'change' => self::deleteChange($record),
-                            'pawning' => self::deletePawning($record),
+                            'entrust' => self::deleteentrust($record),
                             'service' => self::deleteService($record),
                             default => null,
                         };
@@ -159,7 +159,7 @@ class TransactionResource extends Resource
                                 'sale' => self::deleteSale($record),
                                 'purchase' => self::deletePurchase($record),
                                 'change' => self::deleteChange($record),
-                                'pawning' => self::deletePawning($record),
+                                'entrust' => self::deleteentrust($record),
                                 'service' => self::deleteService($record),
                                 default => null,
                             };
@@ -188,8 +188,7 @@ class TransactionResource extends Resource
         return match ($record->transaction_type) {
             'sale' => 'Penjualan',
             'purchase' => 'Pembelian',
-            'pawning' => 'Gadai',
-            'service' => 'Jasa Pembuatan',
+            'entrust' => 'Titip Emas',
             default => ucfirst($record->transaction_type),
         };
     }
@@ -205,7 +204,7 @@ class TransactionResource extends Resource
         return match ($record->transaction_type) {
             'sale' => 'success',
             'purchase' => 'warning',
-            'pawning' => 'info',
+            'entrust' => 'info',
             default => 'gray',
         };
     }
@@ -279,17 +278,17 @@ class TransactionResource extends Resource
         self::deletePurchase($record);
     }
 
-    private static function deletePawning($record)
+    private static function deleteentrust($record)
     {
-        if ($record->pawning) {
+        if ($record->entrust) {
             // Hapus gambar jika ada di details
-            foreach ($record->pawning->details as $detail) {
+            foreach ($record->entrust->details as $detail) {
                 if ($detail->image) {
                     Storage::disk('public')->delete($detail->image);
                 }
             }
-            $record->pawning->details()->delete();
-            $record->pawning->delete();
+            $record->entrust->details()->delete();
+            $record->entrust->delete();
         }
     }
 
