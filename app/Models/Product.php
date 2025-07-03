@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
@@ -50,10 +51,6 @@ class Product extends Model
     {
         static::deleting(function ($model) {
             $model->onDelete(true);
-        });
-
-        static::updating(function ($model) {
-            $model->onUpdate(true);
         });
     }
 }

@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <div class="flex gap-3">
         @foreach ($data as $item)
-        <div style="width: 33.3% !important;" class="shadow-lg p-2 my-3 border">
+        <div style="width: 33.3% !important;" class="shadow p-2 my-3 border">
             <div style="height: 3rem" class="text-sm font-semibold text-dark border-b d-flex items-end" style="font-size: 12px;"><h1>{{ $item['desc'] }}</h1></div>
             <div class="mb-4">
                 <h1 class="text-xl font-extrabold my-4 flex items-end" style="font-size: 1.6rem">

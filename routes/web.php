@@ -9,7 +9,13 @@ use App\Http\Controllers\PrinterController;
 
 
 Route::prefix('cetak-nota')->group(function () {
-    Route::get('/pembelian/{inv}', [PrinterController::class, 'printPurchase'])->name('print.purchase');
+    // routes/web.php
+
+    Route::get('/pembelian/{inv}', [PrinterController::class, 'print'])->name('print.purchase');
+
+
+
+
     Route::get('/penjualan/{inv}', [PrinterController::class, 'printSale'])->name('print.sale');
     Route::get('/pertukaran/{inv}', [PrinterController::class, 'exchange'])->name('print.change');
     Route::get('/titip/emas/{inv}', [PrinterController::class, 'printSale'])->name('print.entrust');

@@ -1,26 +1,35 @@
 <?php
 
-namespace App\Filament\Resources\TransactionResource\Pages;
+namespace App\Filament\Resources\HistoryResource\Pages;
 
-use Filament\Actions;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Widgets\TransactionWidget;
-use App\Filament\Resources\TransactionResource;
-use Illuminate\Contracts\Support\Htmlable;
+use App\Filament\Resources\HistoryResource;
+use Filament\Resources\Pages\ListRecords\Tab;
+use App\Filament\Resources\HistoryResource\Widgets\CountOverview;
+use Filament\Pages\Concerns\ExposesTableToWidgets;
 
-class ListTransactions extends ListRecords
+class ListHistories extends ListRecords
 {
-    protected static string $resource = TransactionResource::class;
+    use ExposesTableToWidgets;
+    protected static string $resource = HistoryResource::class;
     protected static ?string $title = 'Riwayat transaksi';
 
     protected function getHeaderActions(): array
     {
         return [
+            // Uncomment kalau mau tombol tambah data:
             // Actions\CreateAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            CountOverview::class,
+        ];
+    }
+
 
     public function getTabs(): array
     {
@@ -43,41 +52,40 @@ class ListTransactions extends ListRecords
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
                     $query->where('transaction_type', 'change')
-                        ->whereHas('exchange', function ($q) {
-                            $q->where('change_type', 'add');
-                        })
+                        ->whereHas(
+                            'exchange',
+                            fn($q) =>
+                            $q->where('change_type', 'add')
+                        )
                 ),
 
             'tukar_kurang' => Tab::make('Tukar Kurang')
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
                     $query->where('transaction_type', 'change')
-                        ->whereHas('exchange', function ($q) {
-                            $q->where('change_type', 'deduct');
-                        })
+                        ->whereHas(
+                            'exchange',
+                            fn($q) =>
+                            $q->where('change_type', 'deduct')
+                        )
                 ),
 
             'tukar_model' => Tab::make('Tukar Model')
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
                     $query->where('transaction_type', 'change')
-                        ->whereHas('exchange', function ($q) {
-                            $q->where('change_type', 'change_model');
-                        })
+                        ->whereHas(
+                            'exchange',
+                            fn($q) =>
+                            $q->where('change_type', 'change_model')
+                        )
                 ),
+
             'entrust' => Tab::make('Titip Emas')
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
                     $query->where('transaction_type', 'entrust')
                 ),
-        ];
-    }
-
-
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            // TransactionWidget::class,
         ];
     }
 }

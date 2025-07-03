@@ -115,30 +115,30 @@ trait PaymentService
                 break;
         }
 
-        self::getNotification($transaction->transaction_type, $transaction->exchange->id);
+        self::getNotification($transaction->transaction_type);
 
         return redirect(Invoice::getUrl(['invoice' => $transaction->invoice]));
     }
 
 
-    public static function getNotification(string $transactionType, int $id): void
+    public static function getNotification(string $transactionType): void
     {
-        if ($transactionType === "change") {
-            $changeModel = Change::where('id', $id)->first();
-            $changeType = $changeModel?->change_type ?? 'default';
-            $changeLabel = match ($changeType) {
-                'add' => 'Transaksi tukar tambah berhasil',
-                'deduct' => 'Transaksi tukar kurang berhasil',
-                'change_model' => 'Transaksi tukar model berhasil',
-                default => 'Transaksi tukar berhasil',
-            };
+        // if ($transactionType === "change") {
+        //     $changeModel = Change::where('id', $id)->first();
+        //     $changeType = $changeModel?->change_type ?? 'default';
+        //     $changeLabel = match ($changeType) {
+        //         'add' => 'Transaksi tukar tambah berhasil',
+        //         'deduct' => 'Transaksi tukar kurang berhasil',
+        //         'change_model' => 'Transaksi tukar model berhasil',
+        //         default => 'Transaksi tukar berhasil',
+        //     };
 
-            Notification::make()
-                ->title($changeLabel)
-                ->success()
-                ->send();
-            return;
-        }
+        //     Notification::make()
+        //         ->title($changeLabel)
+        //         ->success()
+        //         ->send();
+        //     return;
+        // }
 
         switch ($transactionType) {
             case 'purchase':

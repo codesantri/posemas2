@@ -12,40 +12,63 @@ use App\Traits\Filament\Services\GeneralService;
 class PrinterController extends Controller
 {
 
-    public function printPurchase($inv)
+    public function print($inv)
     {
+        // Retrieve the invoice or fail gracefully
         $invoice = Transaction::where('invoice', $inv)->firstOrFail();
 
-        // Ambil purchase terkait
-        $purchase = $invoice->purchase;
+        $getData = null;
+        $relationMethod = null;
 
-        // Ambil semua detail barang yang dibeli
-        $details = $purchase->purchaseDetails()->with('product')->get();
-
-        // Siapkan array items
-        // $items = [];
-        $total = $invoice->total;
-        $items = collect();
-        foreach ($details as $detail) {
-            $items->push([
-                'qty' => $detail->quantity,
-                'product_name' => $detail->product->name,
-                'subtotal' => $detail->subtotal,
-            ]);
+        // Determine transaction type and related model
+        if ($invoice->transaction_type === "sale") {
+            $getData = $invoice->sale;
+            $relationMethod = "saleDetails";
+        } elseif ($invoice->transaction_type === "purchase") {
+            $getData = $invoice->purchase;
+            $relationMethod = "purchaseDetails";
+        } elseif ($invoice->transaction_type === "entrust") {
+            $getData = $invoice->entrust;
+            $relationMethod = "entrustDetails";
+        } else {
+            abort(404, "Unknown transaction type.");
         }
+
+        // Call the relation method dynamically and eager load 'product'
+        $details = $getData->{$relationMethod}()->with('product.karat')->get();
+
+        // Build the items array with poetic precision
+        $items = $details->map(function ($detail) {
+            $getMayam = GeneralService::getMayam($detail->product->weight) * $detail->quantity;
+            $getGram = $detail->product->weight * $detail->quantity;
+            $getWeight = ' (' . $getMayam . ' my / ' .  $getGram . ' gr)';
+            $rate = optional($detail->product->karat)->rate . '%';
+
+            return [
+                'qty'          => $detail->quantity,
+                'product_name' => $detail->product->name ?? '-',
+                'subtotal'     => $detail->subtotal,
+                'weight'       => $getWeight,
+                'rate'         => $rate ?? '999.9%',
+                'image'        => $detail->product->image,
+            ];
+        });
+
+        // Assemble the data set to feed the view
         $data = [
-            'customer' => $purchase->customer ? $purchase->customer->name : '-',
-            'address' => $purchase->customer ? $purchase->customer->address : '-',
-            'cashier' => $invoice->user->name,
-            'items' => $items,
-            'service' => $invoice->service ?? 0,
+            'customer' => optional($getData->customer)->name ?? '-',
+            'address'  => optional($getData->customer)->address ?? '-',
+            'cashier'  => optional($invoice->user)->name ?? '-',
+            'items'    => $items,
+            'service'  => $invoice->service ?? 0,
             'discount' => $invoice->discount ?? 0,
-            'total' => $total,
-            'date' => $invoice->transaction_date,
+            'total'    => $invoice->total ?? 0,
+            'date'     => $invoice->transaction_date,
         ];
 
-        return view('print.invoice-purchase', compact('data'));
+        return view('print.invoice', compact('data'));
     }
+
 
     // public function printSale($inv)
     // {
@@ -96,8 +119,6 @@ class PrinterController extends Controller
 
         // Retrieve all change items with products
         $details = $change->changeItems()->with('product')->get();
-
-        // Group items by item_type
         $olds = $details
             ->where('item_type', 'old')
             ->map(function ($detail) {
@@ -144,7 +165,7 @@ class PrinterController extends Controller
             'date'     => $invoice->transaction_date,
         ];
 
-        // Return the invoice-change view
+    
         return view('print.invoice-change', compact('data'));
     }
 }

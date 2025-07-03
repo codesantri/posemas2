@@ -74,21 +74,21 @@
 
     <table class="table" style="margin-left: 5cm; margin-top:2.4rem">
         <tbody>
-            {{-- @php
+            @php
             $maxRows = 5;
             $count = $details->count();
-            @endphp --}}
+            @endphp
 
             {{-- Loop data yang ada --}}
             {{ $slot }}
             
             {{-- Loop baris kosong jika kurang dari 5 --}}
-                {{-- @for ($i = 0; $i < $maxRows - $count; $i++) <tr>
+                @for ($i = 0; $i < $maxRows - $count; $i++) <tr>
                 <td class="text-center border-0 py-1">&nbsp;</td>
                 <td class="border-0 py-1"></td>
                 <td class="border-0 py-1 mx-3"></td>
                 </tr>
-                @endfor --}}
+                @endfor
 
                 <tr>
                     <td class="py-1 border-0" colspan="3">
