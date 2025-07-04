@@ -2,7 +2,6 @@
 
 namespace App\Traits\Filament\Services;
 
-use App\Models\Change;
 use App\Models\Transaction;
 use Filament\Notifications\Notification;
 use App\Filament\Clusters\Shop\Pages\Invoice;
@@ -76,12 +75,14 @@ trait PaymentService
                 ->with('error', 'Transaksi ini sudah selesai dan tidak bisa diproses lagi.');
         }
 
-        if ($data['cash'] < $data['total']) {
-            Notification::make()
-                ->title('Uang Tunai kurang dari total pembayaran')
-                ->success()
-                ->send();
-            return;
+        if ($transaction->payment_method === 'cash') {
+            if ($data['cash'] < $data['total'] || $data['cash'] <= 0) {
+                Notification::make()
+                    ->title('Uang Tunai kurang dari total pembayaran')
+                    ->success()
+                    ->send();
+                return;
+            }
         }
 
         $transaction->update([
@@ -115,30 +116,30 @@ trait PaymentService
                 break;
         }
 
-        self::getNotification($transaction->transaction_type);
+        self::getNotification($transaction->transaction_type, $transaction->id);
 
         return redirect(Invoice::getUrl(['invoice' => $transaction->invoice]));
     }
 
 
-    public static function getNotification(string $transactionType): void
+    public static function getNotification(string $transactionType, int $id): void
     {
-        // if ($transactionType === "change") {
-        //     $changeModel = Change::where('id', $id)->first();
-        //     $changeType = $changeModel?->change_type ?? 'default';
-        //     $changeLabel = match ($changeType) {
-        //         'add' => 'Transaksi tukar tambah berhasil',
-        //         'deduct' => 'Transaksi tukar kurang berhasil',
-        //         'change_model' => 'Transaksi tukar model berhasil',
-        //         default => 'Transaksi tukar berhasil',
-        //     };
+        if ($transactionType === "change") {
+            $change = Transaction::where('id', $id)->first();
+            $changeType = $change->exchange?->change_type ?? 'default';
+            $changeLabel = match ($changeType) {
+                'add' => 'Transaksi tukar tambah berhasil',
+                'deduct' => 'Transaksi tukar kurang berhasil',
+                'change_model' => 'Transaksi tukar model berhasil',
+                default => 'Transaksi tukar berhasil',
+            };
 
-        //     Notification::make()
-        //         ->title($changeLabel)
-        //         ->success()
-        //         ->send();
-        //     return;
-        // }
+            Notification::make()
+                ->title($changeLabel)
+                ->success()
+                ->send();
+            return;
+        }
 
         switch ($transactionType) {
             case 'purchase':

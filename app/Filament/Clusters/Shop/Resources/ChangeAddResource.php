@@ -6,12 +6,13 @@ use Filament\Tables;
 use App\Models\Change;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
 use App\Filament\Clusters\Shop;
+use Filament\Resources\Resource;
 use Filament\Pages\SubNavigationPosition;
-use App\Traits\Filament\Services\ExchangeService;
-use App\Traits\Filament\Services\ExchangeTableService;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Filament\Action\TableActions;
+use App\Traits\Filament\Services\TableService;
+use App\Traits\Filament\Services\ExchangeService;
 use App\Filament\Clusters\Shop\Resources\ChangeAddResource\Pages;
 
 class ChangeAddResource extends Resource
@@ -28,15 +29,15 @@ class ChangeAddResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema(ExchangeService::getFormSchemaForResource('add'));
+        return $form->schema(ExchangeService::getForm('add'));
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns(ExchangeTableService::getTableSchemaForResource('add'))
-            ->filters(ExchangeTableService::getTableFilters())
-            ->actions(ExchangeTableService::getTableActions())
+            ->columns(TableService::getColumns())
+            ->filters(TableActions::getTableFilters())
+            ->actions(TableActions::getGroup())
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

@@ -3,13 +3,12 @@
 namespace App\Filament\Clusters\Shop\Resources\SaleResource\Pages;
 
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\SaleService;
 use App\Filament\Clusters\Shop\Resources\SaleResource;
-use App\Traits\Filament\Services\Sale\SaleFormService;
 
 class EditSale extends EditRecord
 {
@@ -22,7 +21,7 @@ class EditSale extends EditRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            SaleFormService::getEditing($record)
+            SaleService::getEditing($record)
         );
     }
 
@@ -31,12 +30,12 @@ class EditSale extends EditRecord
      */
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        return SaleFormService::getUpdate($this->record, $data);
+        return SaleService::getUpdate($this->record, $data);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return SaleFormService::getUpdating($record, $data);
+        return SaleService::getUpdating($record, $data);
     }
 
 
@@ -47,13 +46,12 @@ class EditSale extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        $record = $this->getRecord();
-        $invoice = optional($record->transaction)->invoice ?? null;
         return [
-            HeaderAction::getGoPayment($invoice),
+            HeaderAction::getBack(),
+            HeaderAction::getDelete(),
+            HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
             HeaderAction::getAddProductAction(),
             HeaderAction::getAddCustomerAction(),
-            DeleteAction::make(),
         ];
     }
 }

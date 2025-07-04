@@ -8,15 +8,14 @@ use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
 use App\Filament\Clusters\Shop\Pages\Payment;
+use App\Traits\Filament\Services\SaleService;
 use App\Filament\Clusters\Shop\Resources\SaleResource;
-use App\Traits\Filament\Services\Sale\SaleFormService;
 
 class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
     protected static ?string $title = 'Daftar Penjualan';
     protected static ?string $breadcrumb = '';
-    use SaleFormService;
 
     public ?array $data = [];
 
@@ -34,12 +33,12 @@ class CreateSale extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return SaleFormService::getCreate($data);
+        return SaleService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return SaleFormService::handleCreate($data);
+        return SaleService::handleCreate($data);
     }
 
     public static function canCreateAnother(): bool

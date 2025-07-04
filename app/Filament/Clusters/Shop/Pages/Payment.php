@@ -16,6 +16,7 @@ use Filament\Forms\Components\Section;
 use Filament\Notifications\Notification;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Forms\Components\Placeholder;
+use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Services\PaymentService;
 use Filament\Forms\Components\Actions\Action as FormAction;
 
@@ -249,12 +250,7 @@ class Payment extends Page
             FormAction::make('submit')
                 ->label(fn() => 'Bayar Rp. ' . number_format($this->totalPayment, 0, ',', '.'))
                 ->icon('heroicon-m-credit-card')
-                ->disabled(
-                    fn() =>
-                    $this->typeChange === 'add'
-                        && ($this->data['payment_method'] ?? 'cash') === 'cash'
-                        && $this->cash < $this->totalPayment
-                )
+                ->disabled(fn() => ($this->data['payment_method'] ?? 'cash') === 'cash' && $this->cash < $this->totalPayment)
                 ->button()
                 ->color('primary')
                 ->requiresConfirmation()
@@ -342,5 +338,12 @@ class Payment extends Page
     public function redirectBack()
     {
         return redirect()->back();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            HeaderAction::getBack(),
+        ];
     }
 }

@@ -2,9 +2,11 @@
 
 namespace App\Filament\Clusters\Shop\Resources\ChangeAddResource\Pages;
 
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Traits\Filament\Services\ExchangeService;
 use App\Filament\Clusters\Shop\Resources\ChangeAddResource;
 
@@ -12,19 +14,15 @@ class CreateChangeAdd extends CreateRecord
 {
     protected static string $resource = ChangeAddResource::class;
 
-    public static function canCreateAnother(): bool
-    {
-        return false;
-    }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return ExchangeService::getCreateChange($data);
+        return ExchangeService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return ExchangeService::getRecordCreation($data);
+        return ExchangeService::handleCreate($data);
     }
 
     protected function getHeaderActions(): array
@@ -35,18 +33,13 @@ class CreateChangeAdd extends CreateRecord
         ];
     }
 
-    protected function getCreateFormAction(): \Filament\Actions\Action
+    public static function canCreateAnother(): bool
     {
-        return parent::getCreateFormAction()
-            ->submit(null)
-            ->label('Simpan & Proses Pertukaran')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi Perhitungan?')
-            ->modalSubheading('Untuk menghindari kesalahan, mohon cek ulang data Anda.')
-            ->modalButton('Ya, Lanjutkan')
-            ->action(function () {
-                $this->closeActionModal();
-                $this->create();
-            });
+        return false;
+    }
+
+    protected function getCreateFormAction(): Action
+    {
+        return SubmitAction::create();
     }
 }

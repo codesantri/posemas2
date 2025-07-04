@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\PurchaseService;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource;
-use App\Traits\Filament\Services\Purchase\PurchaseFormService;
 
 class CreatePurchase extends CreateRecord
 {
@@ -26,12 +26,12 @@ class CreatePurchase extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return PurchaseFormService::getCreate($data);
+        return PurchaseService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return PurchaseFormService::handleCreate($data);
+        return PurchaseService::handleCreate($data);
     }
 
     public static function canCreateAnother(): bool

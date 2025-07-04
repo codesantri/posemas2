@@ -2,9 +2,9 @@
 
 namespace App\Filament\Clusters\Shop\Resources\EntrustResource\Pages;
 
-use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Services\EntrustService;
 use App\Filament\Clusters\Shop\Resources\EntrustResource;
 
 class ViewEntrust extends ViewRecord
@@ -12,38 +12,21 @@ class ViewEntrust extends ViewRecord
     protected static string $resource = EntrustResource::class;
     protected static ?string $title = 'Detail Titip Emas';
 
-    protected function getHeaderActions(): array
+    protected function fillForm(): void
     {
-
         $record = $this->getRecord();
-        $invoice = optional($record->transaction)->invoice ?? null;
-
-        $actions = [
-            HeaderAction::getActivate($record->id),
-            Actions\EditAction::make(),
-            Actions\DeleteAction::make(),
-        ];
-
-        if ($record->status_entrust === 'active') {
-            array_unshift($actions, HeaderAction::getGoPayment($invoice));
-        }
-
-        return $actions;
+        $this->form->fill(
+            EntrustService::getEditing($record)
+        );
     }
 
-    protected function mutateFormDataBeforeFill(array $data): array
+    protected function getHeaderActions(): array
     {
-        /** @var \App\Models\Entrust $record */
-        $record = $this->getRecord();
-
-        $data['items'] = $record->entrustDetails->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'quantity' => $item->quantity,
-                'price' => $item->price,
-            ];
-        })->toArray();
-
-        return $data;
+        return [
+            HeaderAction::getBack(),
+            HeaderAction::getActivate($this->getRecord()->id),
+            HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
+            HeaderAction::getDelete(),
+        ];
     }
 }

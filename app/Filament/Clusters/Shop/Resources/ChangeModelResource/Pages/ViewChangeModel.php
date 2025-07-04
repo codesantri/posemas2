@@ -2,8 +2,8 @@
 
 namespace App\Filament\Clusters\Shop\Resources\ChangeModelResource\Pages;
 
-use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
+use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Services\ExchangeService;
 use App\Filament\Clusters\Shop\Resources\ChangeModelResource;
 
@@ -15,8 +15,18 @@ class ViewChangeModel extends ViewRecord
 
     protected function fillForm(): void
     {
-        /** @var Change $record */
         $record = $this->getRecord();
-        $this->form->fill(ExchangeService::prepareFormData($record));
+        $this->form->fill(
+            ExchangeService::getEditing($record)
+        );
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            HeaderAction::getBack(),
+            HeaderAction::getDelete(),
+            HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
+        ];
     }
 }

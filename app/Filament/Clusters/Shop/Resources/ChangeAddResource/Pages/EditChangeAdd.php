@@ -2,11 +2,11 @@
 
 namespace App\Filament\Clusters\Shop\Resources\ChangeAddResource\Pages;
 
-use Filament\Actions;
-use App\Models\Change;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Traits\Filament\Services\ExchangeService;
 use App\Filament\Clusters\Shop\Resources\ChangeAddResource;
 
@@ -16,44 +16,35 @@ class EditChangeAdd extends EditRecord
 
     protected function fillForm(): void
     {
-        /** @var Change $record */
         $record = $this->getRecord();
-        $this->form->fill(ExchangeService::prepareFormData($record));
+        $this->form->fill(
+            ExchangeService::getEditing($record)
+        );
     }
 
     public function mutateFormDataBeforeSave(array $data): array
     {
-        return ExchangeService::getUpdateChange($this->record, $data);
+        return ExchangeService::getUpdate($this->record, $data);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $validated = ExchangeService::getUpdateChange($record, $data); // data sudah tervalidasi
-        return ExchangeService::getRecordUpdate($record, $validated);
+        return ExchangeService::getUpdating($record, $data);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            HeaderAction::getGoPayment($this->getRecord()->invoice),
-            Actions\DeleteAction::make(),
+            HeaderAction::getBack(),
+            HeaderAction::getDelete(),
+            HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
             HeaderAction::getAddProductAction(),
             HeaderAction::getAddCustomerAction(),
         ];
     }
 
-    protected function getSaveFormAction(): \Filament\Actions\Action
+    protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()
-            ->submit(null)
-            ->label('Simpan Perubahan')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi Pembaruan?')
-            ->modalSubheading('Pastikan perubahan data sudah benar sebelum melanjutkan.')
-            ->modalButton('Ya, Simpan')
-            ->action(function () {
-                $this->closeActionModal();
-                $this->save(); // panggil fungsi simpan bawaan
-            });
+        return SubmitAction::update();
     }
 }

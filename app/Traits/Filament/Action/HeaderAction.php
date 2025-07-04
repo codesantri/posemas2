@@ -13,6 +13,7 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Pages\Actions\DeleteAction;
 use Filament\Forms\Components\FileUpload;
 use App\Traits\Filament\Services\PaymentService;
 
@@ -173,7 +174,7 @@ trait HeaderAction
                     return optional($transaction->purchase)->status === 'pending';
                 }
                 if ($transaction->transaction_type === "change") {
-                    return optional($transaction->change)->status === 'pending';
+                    return optional($transaction->exchange)->status === 'pending';
                 }
                 if ($transaction->transaction_type === "entrust") {
                     return optional($transaction->entrust)->status === 'pending'
@@ -206,6 +207,21 @@ trait HeaderAction
                     ->send();
             });
     }
+
+    public static function getBack(): Action
+    {
+        return Action::make('back')
+            ->label('Kembali')
+            ->icon('heroicon-m-arrow-left')
+            ->color('gray')
+            ->url(url()->previous());
+    }
+
+    public static function getDelete(): Action
+    {
+        return DeleteAction::make()->icon('heroicon-m-trash');
+    }
+
 
     public static function getMenu(): Action
     {

@@ -2,63 +2,52 @@
 
 namespace App\Filament\Clusters\Shop\Resources\EntrustResource\Pages;
 
-use Filament\Actions;
+use Filament\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\EntrustService;
 use App\Filament\Clusters\Shop\Resources\EntrustResource;
+
 
 class EditEntrust extends EditRecord
 {
     protected static string $resource = EntrustResource::class;
     protected static ?string $title = 'Ubah Data Titip Emas';
 
-    protected function mutateFormDataBeforeFill(array $data): array
+    protected function fillForm(): void
     {
-        /** @var \App\Models\Entrust $record */
         $record = $this->getRecord();
+        $this->form->fill(
+            EntrustService::getEditing($record)
+        );
+    }
 
-        $data['items'] = $record->entrustDetails->map(function ($item) {
-            return [
-                'product_id' => $item->product_id,
-                'quantity' => $item->quantity,
-                'price' => $item->price,
-            ];
-        })->toArray();
+    public function mutateFormDataBeforeSave(array $data): array
+    {
+        return EntrustService::getUpdate($this->record, $data);
+    }
 
-        return $data;
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        return EntrustService::getUpdating($record, $data);
+    }
+
+    protected function getSaveFormAction(): Action
+    {
+        return SubmitAction::update();
     }
 
     protected function getHeaderActions(): array
     {
-        $record = $this->getRecord();
-        $invoice = optional($record->transaction)->invoice ?? null;
-
-        $actions = [
-            HeaderAction::getActivate($record->id),
+        return [
+            HeaderAction::getBack(),
+            HeaderAction::getActivate($this->getRecord()->id),
+            HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
+            HeaderAction::getDelete(),
             HeaderAction::getAddProductAction(),
             HeaderAction::getAddCustomerAction(),
-            Actions\DeleteAction::make(),
         ];
-
-        if ($record->status_entrust === 'active') {
-            array_unshift($actions, HeaderAction::getGoPayment($invoice));
-        }
-
-        return $actions;
-    }
-
-    protected function getSaveFormAction(): \Filament\Actions\Action
-    {
-        return parent::getSaveFormAction()
-            ->submit(null)
-            ->label('Simpan Perubahan')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi Pembaruan?')
-            ->modalSubheading('Pastikan perubahan data sudah benar sebelum melanjutkan.')
-            ->modalButton('Ya, Simpan')
-            ->action(function () {
-                $this->closeActionModal();
-                $this->save();
-            });
     }
 }

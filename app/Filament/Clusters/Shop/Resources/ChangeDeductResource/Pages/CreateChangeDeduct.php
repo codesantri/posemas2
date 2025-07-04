@@ -2,9 +2,11 @@
 
 namespace App\Filament\Clusters\Shop\Resources\ChangeDeductResource\Pages;
 
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Traits\Filament\Services\ExchangeService;
 use App\Filament\Clusters\Shop\Resources\ChangeDeductResource;
 
@@ -19,12 +21,12 @@ class CreateChangeDeduct extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return ExchangeService::getCreateChange($data);
+        return ExchangeService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return ExchangeService::getRecordCreation($data);
+        return ExchangeService::handleCreate($data);
     }
 
     protected function getHeaderActions(): array
@@ -35,18 +37,8 @@ class CreateChangeDeduct extends CreateRecord
         ];
     }
 
-    protected function getCreateFormAction(): \Filament\Actions\Action
+    protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()
-            ->submit(null)
-            ->label('Simpan & Proses Pertukaran')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi Perhitungan?')
-            ->modalSubheading('Untuk menghindari kesalahan, mohon cek ulang data Anda.')
-            ->modalButton('Ya, Lanjutkan')
-            ->action(function () {
-                $this->closeActionModal();
-                $this->create();
-            });
+        return SubmitAction::create();
     }
 }

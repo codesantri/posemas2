@@ -6,10 +6,12 @@ use Filament\Tables;
 use App\Models\Change;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
 use App\Filament\Clusters\Shop;
+use Filament\Resources\Resource;
 use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Filament\Action\TableActions;
+use App\Traits\Filament\Services\TableService;
 use App\Traits\Filament\Services\ExchangeService;
 use App\Traits\Filament\Services\ExchangeTableService;
 use App\Filament\Clusters\Shop\Resources\ChangeDeductResource\Pages;
@@ -29,15 +31,15 @@ class ChangeDeductResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema(ExchangeService::getFormSchemaForResource('deduct'));
+        return $form->schema(ExchangeService::getForm('deduct'));
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns(ExchangeTableService::getTableSchemaForResource('deduct'))
-            ->filters(ExchangeTableService::getTableFilters())
-            ->actions(ExchangeTableService::getTableActions())
+            ->columns(TableService::getColumns())
+            ->filters(TableActions::getTableFilters())
+            ->actions(TableActions::getGroup())
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

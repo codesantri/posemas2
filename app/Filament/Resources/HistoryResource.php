@@ -31,12 +31,12 @@ class HistoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('transaction_date')
-                    ->label('Tanggal Transaksi')
+                    ->label('TANGGAL/JAM')
                     ->dateTime('d M Y H:i')
                     ->searchable(),
 
                 TextColumn::make('transaction_type')
-                    ->label('Jenis Transaksi')
+                    ->label('TRANSAKSI')
                     ->searchable()
                     ->badge()
                     ->formatStateUsing(function ($state, $record) {
@@ -74,7 +74,7 @@ class HistoryResource extends Resource
                         };
                     }),
                 TextColumn::make('price')
-                    ->label('Harga')
+                    ->label('HARGA')
                     ->state(function ($record) {
                         if ($record->transaction_type === 'sale') {
                             return $record->sale->total_payment ?? 0;
@@ -89,21 +89,21 @@ class HistoryResource extends Resource
                     })->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.')),
 
                 TextColumn::make('service')
-                    ->label('Jasa Pembuatan')
+                    ->label('JASA')
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))->color('primary'),
                 TextColumn::make('discount')
-                    ->label('Diskon/Potongan')
+                    ->label('DISKON')
                     ->formatStateUsing(fn($state) => '-Rp ' . number_format($state, 0, ',', '.'))->color('danger'),
                 TextColumn::make('cash')
-                    ->label('Tunai')
+                    ->label('TUNAI')
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))->color('info'),
 
                 TextColumn::make('total')
-                    ->label('Total Transaksi')
+                    ->label('TOTAL')
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))->color('success'),
 
                 TextColumn::make('payment_method')
-                    ->label('Metode Pembayaran')
+                    ->label('PEMBAYARAN')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'cash' => 'success',

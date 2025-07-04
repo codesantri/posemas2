@@ -2,8 +2,6 @@
 
 namespace App\Filament\Clusters\Shop\Resources\ChangeModelResource\Pages;
 
-use Filament\Actions;
-use App\Models\Change;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
@@ -16,27 +14,28 @@ class EditChangeModel extends EditRecord
 
     protected function fillForm(): void
     {
-        /** @var Change $record */
         $record = $this->getRecord();
-        $this->form->fill(ExchangeService::prepareFormData($record));
+        $this->form->fill(
+            ExchangeService::getEditing($record)
+        );
     }
 
     public function mutateFormDataBeforeSave(array $data): array
     {
-        return ExchangeService::getUpdateChange($this->record, $data);
+        return ExchangeService::getUpdate($this->record, $data);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $validated = ExchangeService::getUpdateChange($record, $data); // data sudah tervalidasi
-        return ExchangeService::getRecordUpdate($record, $validated);
+        return ExchangeService::getUpdating($record, $data);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            HeaderAction::getGoPayment($this->getRecord()->invoice),
-            Actions\DeleteAction::make(),
+            HeaderAction::getBack(),
+            HeaderAction::getDelete(),
+            HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
             HeaderAction::getAddProductAction(),
             HeaderAction::getAddCustomerAction(),
         ];

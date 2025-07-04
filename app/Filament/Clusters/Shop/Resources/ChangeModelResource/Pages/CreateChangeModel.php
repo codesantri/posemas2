@@ -19,12 +19,12 @@ class CreateChangeModel extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return ExchangeService::getCreateChange($data);
+        return ExchangeService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return ExchangeService::getRecordCreation($data);
+        return ExchangeService::handleCreate($data);
     }
 
     protected function getHeaderActions(): array

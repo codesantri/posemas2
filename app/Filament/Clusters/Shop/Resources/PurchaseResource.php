@@ -3,23 +3,16 @@
 namespace App\Filament\Clusters\Shop\Resources;
 
 use Filament\Tables;
-use App\Models\Customer;
 use App\Models\Purchase;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Filament\Clusters\Shop;
 use Filament\Resources\Resource;
-use Filament\Forms\Components\Card;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Tables\Columns\TextColumn;
-use App\Traits\Filament\Forms\FormInput;
-use Filament\Forms\Components\TextInput;
 use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
-use App\Traits\Filament\Action\SelectAction;
 use App\Traits\Filament\Action\TableActions;
+use App\Traits\Filament\Services\TableService;
+use App\Traits\Filament\Services\PurchaseService;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource\Pages;
 
 class PurchaseResource extends Resource
@@ -38,78 +31,19 @@ class PurchaseResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Card::make([
-                    ...FormInput::selectCustomer('customer_id'),
-                    Repeater::make('items')
-                        ->label('Data Produk')
-                        ->schema([
-                            ...FormInput::selectProduct('produk_id'),
-                            Grid::make(2)
-                                ->schema([
-                                    ...FormInput::inputQuantity('quantity'),
-                                    ...FormInput::inputPrice('price'),
-                                ])
-
-                        ])->addActionLabel('Tambah'),
-                ]),
-            ]);
+            ->schema(PurchaseService::getForm());
     }
 
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                TextColumn::make('transaction.invoice')
-                    ->label('Invoice')
-                    ->searchable(),
-                TextColumn::make('customer.name')
-                    ->label('Nama Pelanggan')
-                    ->searchable(),
-                TextColumn::make('total_payment')
-                    ->label('Harga')
-                    ->state(fn($record) => $record->total_payment)
-                    ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.')),
-                TextColumn::make('transaction.total')
-                    ->label('Total Pemabayaran')
-                    ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))->color('success'),
-                TextColumn::make('status')
-                    ->badge()
-                    ->color(fn($state) => [
-                        'pending' => 'warning',
-                        'success' => 'success',
-                        'failed' => 'danger',
-                    ][$state] ?? 'gray')
-                    ->label('Status'),
-                TextColumn::make('transaction.payment_method')
-                    ->label('Pembayaran')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'cash' => 'success',
-                        'online' => 'info',
-                        default => 'secondary',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'cash' => 'Tunai',
-                        'online' => 'Online',
-                        default => ucfirst($state),
-                    }),
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                TableActions::getGroup()
-            ])
+            ->columns(TableService::getColumns())
+            ->filters(TableActions::getTableFilters())
+            ->actions(TableActions::getGroup())
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->before(function ($records) {
-                            foreach ($records as $record) {
-                                self::deletePurchase($record);
-                            }
-                        }),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -129,5 +63,4 @@ class PurchaseResource extends Resource
             'edit' => Pages\EditPurchase::route('/{record}/edit'),
         ];
     }
-
 }

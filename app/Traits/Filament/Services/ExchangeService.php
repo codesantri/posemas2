@@ -4,25 +4,22 @@ namespace App\Traits\Filament\Services;
 
 use App\Models\Change;
 use App\Models\Product;
-use App\Models\Customer;
 use App\Models\ChangeItem;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use Filament\Forms\Components\Grid;
 use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Filament\Forms\FormInput;
-use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Illuminate\Validation\ValidationException;
 
 trait ExchangeService
 {
-    public static function getFormSchemaForResource(string $type): array
+    public static function getForm(string $type): array
     {
         return [
             Section::make('Proses Pertukaran Emas')
@@ -33,14 +30,26 @@ trait ExchangeService
                     Grid::make(2)->schema([
                         Repeater::make('olds')
                             ->label('Produk Lama')
-                            ->schema(self::productRepeaterSchema())
+                            ->schema([
+                                ...FormInput::selectProduct('produk_id'),
+                                Grid::make(2)->schema([
+                                    ...FormInput::inputQuantity('quantity'),
+                                    ...FormInput::inputPrice('price'),
+                                ])
+                            ])
                             ->addActionLabel('Tambah Produk Lama') // Lebih deskriptif
                             ->minItems(1)
                             ->required(),
 
                         Repeater::make('news')
                             ->label('Produk Baru')
-                            ->schema(self::productRepeaterSchema())
+                            ->schema([
+                                ...FormInput::selectProduct('produk_id'),
+                                Grid::make(2)->schema([
+                                    ...FormInput::inputQuantity('quantity'),
+                                    ...FormInput::inputPrice('price'),
+                                ])
+                            ])
                             ->addActionLabel('Tambah Produk Baru') // Lebih deskriptif
                             ->minItems(1) // Minimal satu produk baru harus diisi
                             ->required(),
@@ -49,19 +58,7 @@ trait ExchangeService
         ];
     }
 
-    private static function productRepeaterSchema(): array
-    {
-        return [
-            ...FormInput::selectProduct('produk_id'),
-            Grid::make(2)->schema([
-                ...FormInput::inputQuantity('quantity'),
-                ...FormInput::inputPrice('price'),
-            ])
-        ];
-    }
-
-
-    public static function getCreateChange(array $data): array
+    public static function getCreate(array $data): array
     {
         Log::info('Data mentah dari form:', $data);
         $totalOld = 0;
@@ -215,7 +212,7 @@ trait ExchangeService
         return $result;
     }
 
-    public static function getRecordCreation(array $data): Change
+    public static function handleCreate(array $data): Change
     {
         DB::beginTransaction();
 
@@ -275,7 +272,7 @@ trait ExchangeService
     }
 
     // Update
-    public static function prepareFormData(Model $record): array
+    public static function getEditing(Model $record): array
     {
         $olds = [];
         $news = [];
@@ -311,7 +308,7 @@ trait ExchangeService
      * @param array $data
      * @return array
      */
-    public static function getUpdateChange(Change $change, array $data): array
+    public static function getUpdate(Change $change, array $data): array
     {
         Log::info('Data mentah dari form (UPDATE):', $data);
 
@@ -459,7 +456,7 @@ trait ExchangeService
      * @param array $data
      * @return Model
      */
-    public static function getRecordUpdate(Model $record, array $data): Model
+    public static function getUpdating(Model $record, array $data): Model
     {
         DB::beginTransaction();
         try {

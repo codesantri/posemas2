@@ -8,18 +8,12 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Filament\Clusters\Shop;
 use Filament\Resources\Resource;
-use Filament\Forms\Components\Card;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
-use App\Traits\Filament\Forms\FormInput;
 use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
-use App\Traits\Filament\Action\SelectAction;
 use App\Traits\Filament\Action\TableActions;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Traits\Filament\Services\EntrustService;
 use App\Filament\Clusters\Shop\Resources\EntrustResource\Pages;
-use App\Filament\Clusters\Shop\Resources\EntrustResource\RelationManagers;
 
 class EntrustResource extends Resource
 {
@@ -37,22 +31,7 @@ class EntrustResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Card::make([
-                    ...FormInput::selectCustomer('customer_id'),
-                    Repeater::make('items')
-                        ->label('Data Produk')
-                        ->schema([
-                            ...FormInput::selectProduct('produk_id'),
-                            Grid::make(2)
-                                ->schema([
-                                    ...FormInput::inputQuantity('quantity'),
-                                    ...FormInput::inputPrice('price'),
-                                ])
-
-                        ])->addActionLabel('Tambah'),
-                ]),
-            ]);
+            ->schema(EntrustService::getForm());
     }
 
     public static function table(Table $table): Table
@@ -60,18 +39,15 @@ class EntrustResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('transaction.invoice')
-                    ->label('Invoice')
+                    ->label('INVOICE')
                     ->searchable(),
                 TextColumn::make('customer.name')
-                    ->label('Nama Pelanggan')
+                    ->label('PELANGGAN')
                     ->searchable(),
                 TextColumn::make('total_payment')
-                    ->label('Harga')
+                    ->label('HARGA')
                     ->state(fn($record) => $record->total_payment)
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.')),
-                TextColumn::make('transaction.total')
-                    ->label('Total Pemabayaran')
-                    ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))->color('success'),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn($state) => [
@@ -79,10 +55,10 @@ class EntrustResource extends Resource
                         'success' => 'success',
                         'failed' => 'danger',
                     ][$state] ?? 'gray')
-                    ->label('Status'),
+                    ->label('STATUS'),
 
                 TextColumn::make('status_entrust')
-                    ->label('Status Titip')
+                    ->label('STATUS TITIP')
                     ->badge()
                     ->color(fn($state) => [
                         'unactive' => 'info',
@@ -99,35 +75,16 @@ class EntrustResource extends Resource
                         'active' => 'Aktif',
                         'end' => 'Berhasil',
                     ][$state] ?? 'Tidak Diketahui'),
-
-                TextColumn::make('transaction.payment_method')
-                    ->label('Pembayaran')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'cash' => 'success',
-                        'online' => 'info',
-                        default => 'secondary',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'cash' => 'Tunai',
-                        'online' => 'Online',
-                        default => ucfirst($state),
-                    }),
+                TextColumn::make('created_at')
+                    ->label('TANGGAL')
+                    ->date('d M Y')
+                    ->searchable(),
             ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                TableActions::getGroup()
-            ])
+            ->filters(TableActions::getTableFilters())
+            ->actions(TableActions::getGroup())
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->before(function ($records) {
-                            foreach ($records as $record) {
-                                self::deletePurchase($record);
-                            }
-                        }),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
