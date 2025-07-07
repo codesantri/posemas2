@@ -31,7 +31,6 @@ class UserResource extends Resource
                     ->required()
                     ->minLength(3)
                     ->maxLength(100)
-                    ->rules(['regex:/^[a-zA-Z\s\.\']+$/'])
                     ->columnSpanFull(),
 
                 TextInput::make('username')
@@ -40,12 +39,12 @@ class UserResource extends Resource
                     ->required()
                     ->minLength(4)
                     ->maxLength(15)
-                    ->telRegex('/^(\+62|62|0)8[1-9][0-9]{6,11}$/')
                     ->unique(table: 'users', column: 'username')
                     ->columnSpanFull(),
 
                 TextInput::make('password')
                     ->label('Kata Sandi')
+                    ->prefixIcon('heroicon-m-key')
                     ->password()
                     ->required()
                     ->revealable()

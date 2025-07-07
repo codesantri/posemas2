@@ -2,11 +2,13 @@
 
 namespace App\Filament\Clusters\Shop\Resources\PurchaseResource\Pages;
 
+use App\Models\Purchase;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\CreateService;
 use App\Traits\Filament\Services\PurchaseService;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource;
 
@@ -26,12 +28,12 @@ class CreatePurchase extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return PurchaseService::getCreate($data);
+        return CreateService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return PurchaseService::handleCreate($data);
+        return CreateService::handleCreate($data, Purchase::class, 'purchase');
     }
 
     public static function canCreateAnother(): bool

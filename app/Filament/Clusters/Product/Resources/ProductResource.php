@@ -55,14 +55,11 @@ class ProductResource extends Resource
                         ->rules(['exists:types,id']),
 
                     Select::make('karat_id')
-                        ->label('Karat-Kadar')
-                        ->options(function () {
-                            return \App\Models\Karat::all()->mapWithKeys(function ($karat) {
-                                return [$karat->id => $karat->karat . ' - ' . $karat->rate . '%'];
-                            })->toArray();
-                        })
+                        ->label('Kadar Emas')
+                        ->relationship('karat', 'name')
                         ->required()
                         ->rules(['exists:karats,id']),
+
 
                     TextInput::make('weight')
                         ->label('Berat (gram)')
@@ -81,6 +78,7 @@ class ProductResource extends Resource
                     ->directory('products')
                     ->maxSize(2048)
                     ->imagePreviewHeight('200')
+                    ->resize(50)
                     ->columnSpanFull()
             ]);
     }
@@ -94,29 +92,33 @@ class ProductResource extends Resource
             )
             ->columns([
                 TextColumn::make('image')
-                    ->label('Nama Produk')
+                    ->label('PRODUK')
                     ->formatStateUsing(function ($state, $record) {
-                        $imageUrl = asset('storage/' . $record->image);
+                        // Fallback ke logo.png jika tidak ada image
+                        $imagePath = $record->image
+                            ? 'storage/' . $record->image
+                            : 'images/logo.png'; // pastikan path benar, misal public/images/logo.png
 
-                        return <<<HTML
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <img src="{$imageUrl}" alt="Image" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
-                                    <span>{$record->name}</span>
-                                </div>
+                        $imageUrl = asset($imagePath);
+
+                                        return <<<HTML
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="{$imageUrl}" alt="Image" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                <span>{$record->name}</span>
+                            </div>
                         HTML;
                     })
                     ->html(),
+
+
                 TextColumn::make('category.name')
-                    ->label('Kategori')
+                    ->label('KATEGORI')
                     ->searchable(),
                 TextColumn::make('type.name')
-                    ->label('Jenis')
+                    ->label('JENIS')
                     ->searchable(),
-                TextColumn::make('karat.karat')
-                    ->label('Karat-Kadar')
-                    ->formatStateUsing(function ($state, $record) {
-                        return optional($record->karat)->karat . ' - ' . optional($record->karat)->rate . '%';
-                    })
+                TextColumn::make('karat.name')
+                    ->label('KADAR EMAS')
                     ->searchable(),
                 TextColumn::make('weight_mayam')
                     ->label('Berat Mayam')

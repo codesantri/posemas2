@@ -4,6 +4,7 @@ namespace App\Traits\Filament\Services;
 
 trait GeneralService
 {
+
     /**
      * Contoh method getMayam
      * 

@@ -18,16 +18,4 @@ class Entrust extends Model
         return $this->belongsTo(Transaction::class);
     }
 
-    public function entrustDetails()
-    {
-        return $this->hasMany(EntrustDetail::class);
-    }
-
-
-    protected static function booted()
-    {
-        static::deleting(function ($entrust) {
-            Transaction::where('id', $entrust->transaction_id)->delete();
-        });
-    }
 }

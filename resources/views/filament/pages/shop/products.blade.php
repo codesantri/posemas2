@@ -42,15 +42,15 @@
                 </x-slot>
 
                 <x-filament::dropdown.list>
-                    <x-filament::dropdown.list.item wire:click="$set('categoryId', '')"
-                        :class="$categoryId === '' || $categoryId === null ? 'bg-warning-600 text-white' : ''">
-                        Semua Kategori
+                    <x-filament::dropdown.list.item wire:click="$set('typeId', '')"
+                        :class="$typeId === '' || $typeId === null ? 'bg-warning-600 text-white' : ''">
+                        Semua Jenis
                     </x-filament::dropdown.list.item>
 
-                    @foreach (\App\Models\Category::orderBy('name')->get() as $category)
-                    <x-filament::dropdown.list.item wire:click="$set('categoryId', {{ $category->id }})"
-                        :class="$categoryId == $category->id ? 'bg-warning-600 text-white' : ''">
-                        {{ $category->name }}
+                    @foreach (\App\Models\Type::orderBy('name')->get() as $type)
+                    <x-filament::dropdown.list.item wire:click="$set('typeId', {{ $type->id }})"
+                        :class="$typeId == $type->id ? 'bg-warning-600 text-white' : ''">
+                        {{ $type->name }}
                     </x-filament::dropdown.list.item>
                     @endforeach
                 </x-filament::dropdown.list>
@@ -63,12 +63,6 @@
                     {{ $totalOrder }}
                 </x-slot>
             </x-filament::button>
-            {{-- <x-filament::button color="info" class="relative" wire:click='gotoOrder'>
-                <x-filament::icon icon="heroicon-o-shopping-cart" class="w-5 h-5 inline-block" />
-                <x-slot name="badge" color="success">
-                    {{ $totalCheckout }}
-                </x-slot>
-            </x-filament::button> --}}
         </div>
     </div>
 
@@ -87,10 +81,11 @@
             <div class="px-3 py-3">
                 <div class="flex items-center justify-around my-2">
                     <x-filament::badge color="info" class="mx-1">
-                        {{ $item->karat->karat }} {{ $item->karat->rate . ' %' }}
+                        <span class="text-lg">{{ $item->karat->name }}</span>
                     </x-filament::badge>
                     <x-filament::badge color="success">
-                        {{ $this->getMayam($item->weight) }} mayam ({{ $item->weight ?? 0 }} gram)
+                        <span class="text-lg">{{ $this->getMayam($item->weight) }} my ({{ $item->weight ?? 0 }} gr)</span>
+                        
                     </x-filament::badge>
                 </div>
                 <h5 class="text-lg tracking-tight my-2 text-gray-900 dark:text-white">

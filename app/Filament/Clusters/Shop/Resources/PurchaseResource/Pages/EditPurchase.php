@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\FormService;
+use App\Traits\Filament\Services\UpdateService;
 use App\Traits\Filament\Services\PurchaseService;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource;
 
@@ -18,19 +20,21 @@ class EditPurchase extends EditRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            PurchaseService::getEditing($record)
+            FormService::getFormFill($record)
         );
     }
 
-    public function mutateFormDataBeforeSave(array $data): array
+
+    protected function mutateFormDataBeforeSave(array $data): array
     {
-        return PurchaseService::getUpdate($this->record, $data);
+        return UpdateService::getUpdate($this->record, $data);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return PurchaseService::getUpdating($record, $data);
+        return UpdateService::getUpdating($record, $data);
     }
+
 
     protected function getSaveFormAction(): Action
     {

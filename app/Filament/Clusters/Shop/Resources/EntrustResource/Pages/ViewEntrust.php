@@ -4,7 +4,7 @@ namespace App\Filament\Clusters\Shop\Resources\EntrustResource\Pages;
 
 use Filament\Resources\Pages\ViewRecord;
 use App\Traits\Filament\Action\HeaderAction;
-use App\Traits\Filament\Services\EntrustService;
+use App\Traits\Filament\Services\FormService;
 use App\Filament\Clusters\Shop\Resources\EntrustResource;
 
 class ViewEntrust extends ViewRecord
@@ -16,7 +16,7 @@ class ViewEntrust extends ViewRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            EntrustService::getEditing($record)
+            FormService::getFormFill($record)
         );
     }
 
@@ -24,7 +24,6 @@ class ViewEntrust extends ViewRecord
     {
         return [
             HeaderAction::getBack(),
-            HeaderAction::getActivate($this->getRecord()->id),
             HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
             HeaderAction::getDelete(),
         ];

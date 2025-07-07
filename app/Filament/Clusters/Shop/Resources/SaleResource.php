@@ -12,6 +12,7 @@ use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Traits\Filament\Action\TableActions;
+use App\Traits\Filament\Services\FormService;
 use App\Traits\Filament\Services\SaleService;
 use App\Traits\Filament\Services\TableService;
 use App\Filament\Clusters\Shop\Resources\SaleResource\Pages;
@@ -31,7 +32,7 @@ class SaleResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(SaleService::getForm());
+            ->schema(FormService::getForm('sale'));
     }
 
     public static function table(Table $table): Table

@@ -42,10 +42,8 @@ trait HeaderAction
                         ->required(),
 
                     Select::make('karat_id')
-                        ->label('Karat-Kadar')
-                        ->options(Karat::all()->mapWithKeys(fn($karat) => [
-                            $karat->id => "{$karat->karat} - {$karat->rate}%",
-                        ])->toArray())
+                        ->label('Kadar Emas')
+                        ->options(Type::pluck('name', 'id'))
                         ->required(),
 
                     TextInput::make('weight')
@@ -168,17 +166,16 @@ trait HeaderAction
             ->label('Proses Transaksi')
             ->visible(function () use ($transaction) {
                 if ($transaction->transaction_type === "sale") {
-                    return optional($transaction->sale)->status === 'pending';
+                    return optional($transaction)->status === 'pending';
                 }
                 if ($transaction->transaction_type === "purchase") {
-                    return optional($transaction->purchase)->status === 'pending';
+                    return optional($transaction)->status === 'pending';
                 }
                 if ($transaction->transaction_type === "change") {
-                    return optional($transaction->exchange)->status === 'pending';
+                    return optional($transaction)->status === 'pending';
                 }
                 if ($transaction->transaction_type === "entrust") {
-                    return optional($transaction->entrust)->status === 'pending'
-                        && optional($transaction->entrust)->status_entrust === 'active';
+                    return optional($transaction)->status === 'pending';
                 }
                 return false;
             })
@@ -186,27 +183,6 @@ trait HeaderAction
     }
 
 
-    public static function getActivate($id): Action
-    {
-        return Action::make('activate')
-            ->label('Konfirmasi Titip Emas')
-            ->icon('heroicon-m-paper-airplane')
-            ->color('success')
-            ->visible(fn($record) => $record->status_entrust === 'unactive')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi')
-            ->modalDescription('Apakah kamu yakin mengkonfirmasi penitipan emas?')
-            ->modalButton('Ya, Lanjutkan')
-            ->action(function ($record) {
-                $record->update([
-                    'status_entrust' => 'active',
-                ]);
-                Notification::make()
-                    ->title('Konfirmasi titip emas berhasil')
-                    ->success()
-                    ->send();
-            });
-    }
 
     public static function getBack(): Action
     {

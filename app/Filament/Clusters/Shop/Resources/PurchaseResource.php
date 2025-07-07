@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Pages\SubNavigationPosition;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\Filament\Action\TableActions;
+use App\Traits\Filament\Services\FormService;
 use App\Traits\Filament\Services\TableService;
 use App\Traits\Filament\Services\PurchaseService;
 use App\Filament\Clusters\Shop\Resources\PurchaseResource\Pages;
@@ -31,7 +32,7 @@ class PurchaseResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(PurchaseService::getForm());
+            ->schema(FormService::getForm());
     }
 
 

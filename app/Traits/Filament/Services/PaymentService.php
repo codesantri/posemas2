@@ -41,35 +41,8 @@ trait PaymentService
     {
         $transaction = Transaction::where('invoice', $data['invoice'])->firstOrFail();
 
-        $alreadyProcessed = false;
 
-        switch ($transaction->transaction_type) {
-            case 'purchase':
-                if ($transaction->purchase && $transaction->purchase->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-
-            case 'sale':
-                if ($transaction->sale && $transaction->sale->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-
-            case 'change':
-                if ($transaction->exchange && $transaction->exchange->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-
-            case 'entrust':
-                if ($transaction->entrust && $transaction->entrust->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-        }
-
-        if ($alreadyProcessed) {
+        if ($transaction->status === 'success') {
             return redirect()
                 ->back()
                 ->with('error', 'Transaksi ini sudah selesai dan tidak bisa diproses lagi.');
@@ -91,30 +64,10 @@ trait PaymentService
             'change' => $data['change'],
             'service' => $data['service'],
             'total' => $data['total'],
+            'status' => 'success',
             'transaction_date' => now(),
         ]);
 
-        // Update status jika perlu
-        switch ($transaction->transaction_type) {
-            case 'purchase':
-                $transaction->purchase?->update(['status' => 'success']);
-                break;
-
-            case 'sale':
-                $transaction->sale?->update(['status' => 'success']);
-                break;
-
-            case 'entrust':
-                $transaction->entrust?->update([
-                    'status_entrust' => 'end',
-                    'status' => 'success'
-                ]);
-                break;
-
-            case 'change':
-                $transaction->exchange?->update(['status' => 'success']);
-                break;
-        }
 
         self::getNotification($transaction->transaction_type, $transaction->id);
 

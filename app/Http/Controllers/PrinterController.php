@@ -2,11 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Mpdf\Mpdf;
-use App\Models\Sale;
-use App\Models\Purchase;
 use App\Models\Transaction;
-use Illuminate\Http\Request;
 use App\Traits\Filament\Services\GeneralService;
 
 class PrinterController extends Controller
@@ -14,158 +10,119 @@ class PrinterController extends Controller
 
     public function print($inv)
     {
-        // Retrieve the invoice or fail gracefully
-        $invoice = Transaction::where('invoice', $inv)->firstOrFail();
+        // Retrieve the transaction or fail gracefully
+        $transaction = Transaction::where('invoice', $inv)->firstOrFail();
 
-        $getData = null;
-        $relationMethod = null;
-
-        // Determine transaction type and related model
-        if ($invoice->transaction_type === "sale") {
-            $getData = $invoice->sale;
-            $relationMethod = "saleDetails";
-        } elseif ($invoice->transaction_type === "purchase") {
-            $getData = $invoice->purchase;
-            $relationMethod = "purchaseDetails";
-        } elseif ($invoice->transaction_type === "entrust") {
-            $getData = $invoice->entrust;
-            $relationMethod = "entrustDetails";
-        } else {
-            abort(404, "Unknown transaction type.");
-        }
-
-        // Call the relation method dynamically and eager load 'product'
-        $details = $getData->{$relationMethod}()->with('product.karat')->get();
-
-        // Build the items array with poetic precision
-        $items = $details->map(function ($detail) {
-            $getMayam = GeneralService::getMayam($detail->product->weight) * $detail->quantity;
-            $getGram = $detail->product->weight * $detail->quantity;
-            $getWeight = ' (' . $getMayam . ' my / ' .  $getGram . ' gr)';
-            $rate = optional($detail->product->karat)->rate . '%';
-
-            return [
-                'qty'          => $detail->quantity,
-                'product_name' => $detail->product->name ?? '-',
-                'subtotal'     => $detail->subtotal,
-                'weight'       => $getWeight,
-                'rate'         => $rate ?? '999.9%',
-                'image'        => $detail->product->image,
-            ];
-        });
-
-        // Assemble the data set to feed the view
         $data = [
-            'customer' => optional($getData->customer)->name ?? '-',
-            'address'  => optional($getData->customer)->address ?? '-',
-            'cashier'  => optional($invoice->user)->name ?? '-',
-            'items'    => $items,
-            'service'  => $invoice->service ?? 0,
-            'discount' => $invoice->discount ?? 0,
-            'total'    => $invoice->total ?? 0,
-            'date'     => $invoice->transaction_date,
+            'invoice' => '',
+            'customer' => '-',
+            'address'  => '-',
+            'cashier'  => optional($transaction->user)->name ?? '-',
+            'service'  => $transaction->service ?? 0,
+            'discount' => $transaction->discount ?? 0,
+            'total'    => $transaction->total ?? 0,
+            'date'     => $transaction->transaction_date,
+            'olds'     => collect(), // Initialize as collection
+            'news'     => collect(), // Initialize as collection
+            'items'    => collect(), // Initialize as collection
+            'total_items' => 0,
         ];
 
-        return view('print.invoice', compact('data'));
+        if ($transaction->transaction_type === 'change') {
+            $change = $transaction->exchange;
+
+            $details = $change->changeItems()->with('product.karat')->get();
+
+            $data['olds'] = $details
+                ->where('item_type', 'old')
+                ->map(fn($detail) => $this->mapChangeItem($detail))
+                ->values();
+
+            $data['news'] = $details
+                ->where('item_type', 'new')
+                ->map(fn($detail) => $this->mapChangeItem($detail))
+                ->values();
+
+            // Hitung total items
+            $data['total_items'] = $data['olds']->count() + $data['news']->count();
+
+            $data['customer'] = optional($change->customer)->name ?? '-';
+            $data['address']  = optional($change->customer)->address ?? '-';
+        } else {
+            // Resolve model & relation
+            switch ($transaction->transaction_type) {
+                case 'sale':
+                    $model = $transaction->sale;
+                    $relation = 'saleDetails';
+                    break;
+                case 'purchase':
+                    $model = $transaction->purchase;
+                    $relation = 'purchaseDetails';
+                    break;
+                case 'entrust':
+                    $model = $transaction->entrust;
+                    $relation = 'entrustDetails';
+                    break;
+                default:
+                    abort(404, "Unknown transaction type.");
+            }
+
+            $details = $model->{$relation}()->with('product.karat')->get();
+
+            $data['items'] = $details
+                ->map(fn($detail) => $this->mapRegularItem($detail))
+                ->values();
+
+            // Hitung total items
+            $data['total_items'] = $data['items']->count();
+
+            $data['customer'] = optional($model->customer)->name ?? '-';
+            $data['address']  = optional($model->customer)->address ?? '-';
+        }
+        $images = collect()
+            ->merge($data['items']->pluck('image'))
+            ->merge($data['olds']->pluck('image'))
+            ->merge($data['news']->pluck('image'))
+            ->unique()
+            ->values()
+            ->toArray();
+        $rows = $data['total_items'] + $data['service'] + $data['discount'];
+        return view('print.invoice', compact('data', 'images', 'rows'));
     }
 
-
-    // public function printSale($inv)
-    // {
-    //     $invoice = Transaction::where('invoice', $inv)->firstOrFail();
-
-    //     $change = $invoice->exchange;
-
-    //     $details = $change->changeItems()->with('product')->get();
-
-
-    //     $total = $invoice->total;
-
-
-
-
-    //     $items = collect();
-    //     foreach ($details as $detail) {
-    //         $items->push([
-    //             'qty' => $detail->quantity,
-    //             'product_name' => $detail->product->name,
-    //             'subtotal' => $detail->subtotal,
-    //         ]);
-    //     }
-    //     $data = [
-    //         'customer' => $change->customer ? $change->customer->name : '-',
-    //         'address' => $change->customer ? $change->customer->address : '-',
-    //         'cashier' => $invoice->user->name,
-    //         'items' => $items,
-    //         'service' => $invoice->service ?? 0,
-    //         'discount' => $invoice->discount ?? 0,
-    //         'total' => $total,
-    //         'date' => $invoice->transaction_date,
-    //     ];
-
-    //     return view('print.invoice-purchase', compact('data'));
-    // }
-
-    public function exchange($inv)
+    /**
+     * Map an item from a "change" transaction
+     */
+    protected function mapChangeItem($detail)
     {
-        // Retrieve the transaction
-        $invoice = Transaction::where('invoice', $inv)->firstOrFail();
+        $mayam = GeneralService::getMayam($detail->total_weight);
+        $gram  = $detail->total_weight;
 
-        // Ensure there is an exchange record
-        $change = $invoice->exchange;
-        if (!$change) {
-            abort(404, 'Exchange data not found.');
-        }
-
-        // Retrieve all change items with products
-        $details = $change->changeItems()->with('product')->get();
-        $olds = $details
-            ->where('item_type', 'old')
-            ->map(function ($detail) {
-                $getMayam = GeneralService::getMayam($detail->product->weight) * $detail->quantity;
-                $getGram = $detail->product->weight * $detail->quantity;
-                $getWeight = '  (' . $getMayam . ' my' . ' / ' .  $getGram . ' gr' . ')';
-                $rate = $detail->product->karat->rate . '%';
-                return [
-                    'qty'          => $detail->quantity,
-                    'product_name' => $detail->product->name ?? '-',
-                    'subtotal'     => $detail->subtotal,
-                    'weight' => $getWeight,
-                    'rate' => $rate ?? '999.9%',
-                    'image' => $detail->product->image,
-                ];
-            });
-
-        $news = $details
-            ->where('item_type', 'new')
-            ->map(function ($detail) {
-                $getMayam = GeneralService::getMayam($detail->product->weight) * $detail->quantity;
-                $getGram = $detail->product->weight * $detail->quantity;
-                $getWeight = '  (' . $getMayam . ' my' . ' / ' .  $getGram . ' gr' . ')';
-                $rate =  $detail->product->karat->rate . '%';
-                return [
-                    'qty'          => $detail->quantity,
-                    'product_name' => $detail->product->name ?? '-',
-                    'subtotal'     => $detail->subtotal,
-                    'weight' => $getWeight,
-                    'rate' => $rate ?? '999.9%',
-                    'image' => $detail->product->image,
-                ];
-            });
-
-        $data = [
-            'customer' => optional($change->customer)->name ?? '-',
-            'address'  => optional($change->customer)->address ?? '-',
-            'cashier'  => optional($invoice->user)->name ?? '-',
-            'olds'     => $olds,
-            'news'     => $news,
-            'service'  => $invoice->service ?? 0,
-            'discount' => $invoice->discount ?? 0,
-            'total'    => $invoice->total ?? 0,
-            'date'     => $invoice->transaction_date,
+        return [
+            'qty'          => $detail->quantity,
+            'product_name' => $detail->product_name ?? '-',
+            'subtotal'     => $detail->subtotal,
+            'weight'       => sprintf(' (%s my / %s gr)', $mayam, $gram),
+            'rate'         => optional($detail->product->karat)->name ?? '999.9%',
+            'image'        => $detail->product->image,
         ];
+    }
 
-    
-        return view('print.invoice-change', compact('data'));
+    /**
+     * Map an item from sale/purchase/entrust
+     */
+    protected function mapRegularItem($detail)
+    {
+        $mayam = GeneralService::getMayam($detail->total_weight);
+        $gram  = $detail->total_weight;
+
+        return [
+            'qty'          => $detail->quantity,
+            'product_name' => $detail->product->name ?? '-',
+            'subtotal'     => $detail->subtotal,
+            'weight'       => sprintf(' (%s my / %s gr)', $mayam, $gram),
+            'rate'         => optional($detail->product->karat)->name ?? '999.9%',
+            'image'        => $detail->product->image,
+        ];
     }
 }

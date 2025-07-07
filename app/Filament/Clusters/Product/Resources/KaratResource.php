@@ -28,28 +28,18 @@ class KaratResource extends Resource
 
 
     protected static ?string $navigationIcon = 'heroicon-o-beaker';
-    protected static ?string $navigationLabel = 'Karat';
+    protected static ?string $navigationLabel = 'Kadar Emas';
 
-    protected static ?string $modelLabel = 'Karat'; // Singular
-    protected static ?string $pluralModelLabel = 'Karat'; // Plural
+    protected static ?string $modelLabel = 'Kadar Emas'; // Singular
+    protected static ?string $pluralModelLabel = 'Kadar Emas'; // Plural
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('karat')
+                TextInput::make('name')
                     ->label('Karat')
                     ->maxLength(10)
-                    ->required(),
-
-                TextInput::make('rate')
-                    ->label('Kadar (0.00% - 100.00%)')
-                    ->type('number') // ini kunci utama!
-                    ->step(0.01)
-                    ->minValue(0)
-                    ->maxValue(100)
-                    ->default(0.01)
-                    ->suffix('%')
                     ->required(),
 
             ]);
@@ -59,12 +49,9 @@ class KaratResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('karat')
-                    ->label('Karat')
+                TextColumn::make('name')
+                    ->label('Nama')
                     ->searchable(),
-                TextColumn::make('rate')
-                    ->label('Kadar')
-                    ->suffix('%'),
             ])
             ->filters([
                 //

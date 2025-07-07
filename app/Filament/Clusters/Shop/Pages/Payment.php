@@ -31,7 +31,7 @@ class Payment extends Page
 
     public Transaction $transaction;
     public array $data = [];
-    public string $transactionType;
+    public string $transactionType = '';
 
     // Input values
     public float|int $iservice = 0;
@@ -61,50 +61,26 @@ class Payment extends Page
 
     public function loadPage($invoice)
     {
+        // Retrieve transaction, fail if not found
         $this->transaction = Transaction::where('invoice', $invoice)->firstOrFail();
-        $alreadyProcessed = false;
-        switch ($this->transaction->transaction_type) {
-            case 'purchase':
-                if ($this->transaction->purchase && $this->transaction->purchase->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
 
-            case 'sale':
-                if ($this->transaction->sale && $this->transaction->sale->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-            case 'entrust':
-                if ($this->transaction->entrust && $this->transaction->entrust->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-
-            case 'change':
-                if ($this->transaction->exchange && $this->transaction->exchange->status === 'success') {
-                    $alreadyProcessed = true;
-                }
-                break;
-        }
-
-        if ($alreadyProcessed) {
+        // Check directly from the status column
+        if ($this->transaction->status === 'success') {
             Notification::make()
                 ->title('Transaksi sudah selesai')
                 ->body('Transaksi ini sudah diproses sebelumnya dan tidak dapat dibayar lagi.')
                 ->danger()
                 ->send();
 
-            redirect()->back()->send();
-            exit; // Pastikan berhenti
+            return redirect()->back();
         }
 
-        // Kalau belum success, lanjut load form
         $this->data['payment_method'] = $this->transaction->payment_method ?? 'cash';
         $this->transactionType = $this->transaction->transaction_type;
         $this->getTypeChange();
         $this->getTotalPayment();
         $this->getData();
+        $this->cashierName = $this->transaction->user->name;
         $this->form->fill();
     }
 
@@ -265,13 +241,12 @@ class Payment extends Page
     {
         if ($this->transactionType === 'change') {
             $this->customerName = $this->transaction->exchange->customer->name ?? '';
-            $this->cashierName = $this->transaction->user->name ?? '';
         } elseif ($this->transactionType === 'sale') {
             $this->customerName = $this->transaction->sale->customer->name ?? '';
-            $this->cashierName = $this->transaction->sale->user->name ?? '';
         } elseif ($this->transactionType === 'purchase') {
             $this->customerName = $this->transaction->purchase->customer->name ?? '';
-            $this->cashierName = $this->transaction->purchase->user->name ?? '';
+        } elseif ($this->transactionType === 'entrust') {
+            $this->customerName = $this->transaction->entrust->customer->name ?? '';
         }
     }
 

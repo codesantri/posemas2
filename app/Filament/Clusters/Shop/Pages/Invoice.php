@@ -34,7 +34,6 @@ class Invoice extends Page
 
     public ?string $typeName = "";
     public ?string $urlName = "";
-    public ?string $urlPrint = "";
 
     public function mount()
     {
@@ -62,7 +61,6 @@ class Invoice extends Page
             $this->totalPayment = $this->transaction->total ?? 0;
             $this->getCustomer();
             $this->getTotalPayment();
-            $this->printUrl();
             $this->urlName();
         } else {
             // Jika invoice tidak ditemukan
@@ -122,7 +120,7 @@ class Invoice extends Page
                                         ->label('Cetak Nota')
                                         ->icon('heroicon-o-printer')
                                         ->color('primary')
-                                        ->url(route($this->urlPrint, $this->transaction->invoice))
+                                        ->url(route('print', $this->transaction->invoice))
                                         ->openUrlInNewTab()
 
                                 ])
@@ -142,6 +140,8 @@ class Invoice extends Page
             $this->customerName = $this->transaction->purchase->customer->name;
         } elseif ($this->transaction->transaction_type === "sale") {
             $this->customerName = $this->transaction->sale->customer->name;
+        } elseif ($this->transaction->transaction_type === "entrust") {
+            $this->customerName = $this->transaction->entrust->customer->name;
         }
     }
 
@@ -196,21 +196,10 @@ class Invoice extends Page
             $this->typeName = 'Pembelian';
         } elseif ($this->transaction?->transaction_type === 'sale') {
             $this->typeName = 'Penjualan';
+        } elseif ($this->transaction?->transaction_type === 'entrust') {
+            $this->typeName = 'Titip Emas';
         }
 
         return 'Transaksi ' . $this->typeName;
-    }
-
-    public function printUrl()
-    {
-        if ($this->transaction->transaction_type === "change") {
-            $this->urlPrint = "print.change";
-        } elseif ($this->transaction->transaction_type === "purchase") {
-            $this->urlPrint = "print.purchase";
-        } elseif ($this->transaction->transaction_type === "sale") {
-            $this->urlPrint = "print.sale";
-        } elseif ($this->transaction->transaction_type === "entrust") {
-            $this->urlPrint = "print.entrust";
-        }
     }
 }

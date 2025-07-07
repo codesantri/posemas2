@@ -40,16 +40,21 @@ class Transaction extends Model
         return 'invoice';
     }
 
+    public function details()
+    {
+        return $this->hasMany(Detail::class);
+    }
+
 
 
     protected static function booted()
     {
         static::creating(function ($transaction) {
             $prefixes = [
-                'sale' => 'SL',
-                'purchase' => 'PRC',
-                'entrust' => 'ENT',
-                'change' => 'CHG',
+                'sale' => 'LMJE-',
+                'purchase' => 'LMPBE-',
+                'entrust' => 'LMTE-',
+                'change' => 'LMTKR-',
             ];
             $prefix = $prefixes[$transaction->transaction_type] ?? 'TRX';
             if (!$transaction->invoice) {

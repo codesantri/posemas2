@@ -194,34 +194,7 @@ class HistoryResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['sale', 'purchase', 'exchange', 'entrust'])
-            ->where(function (Builder $query) {
-                $query
-                    ->where(function (Builder $query) {
-                        $query->where('transaction_type', 'change')
-                            ->whereHas('exchange', function (Builder $q) {
-                                $q->where('status', 'success');
-                            });
-                    })
-                    ->orWhere(function (Builder $query) {
-                        $query->where('transaction_type', 'sale')
-                            ->whereHas('sale', function (Builder $q) {
-                                $q->where('status', 'success');
-                            });
-                    })
-                    ->orWhere(function (Builder $query) {
-                        $query->where('transaction_type', 'purchase')
-                            ->whereHas('purchase', function (Builder $q) {
-                                $q->where('status', 'success');
-                            });
-                    })
-                    ->orWhere(function (Builder $query) {
-                        $query->where('transaction_type', 'entrust')
-                            ->whereHas('entrust', function (Builder $q) {
-                                $q->where('status', 'success');
-                            });
-                    });
-            })
+            ->with(['sale', 'purchase', 'exchange', 'entrust'])->where('status', 'success')
             ->latest();
     }
 

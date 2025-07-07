@@ -2,9 +2,11 @@
 
 namespace App\Filament\Clusters\Shop\Resources\ChangeModelResource\Pages;
 
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Action\SubmitAction;
 use App\Traits\Filament\Services\ExchangeService;
 use App\Filament\Clusters\Shop\Resources\ChangeModelResource;
 
@@ -41,18 +43,8 @@ class EditChangeModel extends EditRecord
         ];
     }
 
-    protected function getSaveFormAction(): \Filament\Actions\Action
+    protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()
-            ->submit(null)
-            ->label('Simpan Perubahan')
-            ->requiresConfirmation()
-            ->modalHeading('Konfirmasi Pembaruan?')
-            ->modalSubheading('Pastikan perubahan data sudah benar sebelum melanjutkan.')
-            ->modalButton('Ya, Simpan')
-            ->action(function () {
-                $this->closeActionModal();
-                $this->save(); // panggil fungsi simpan bawaan
-            });
+        return SubmitAction::update();
     }
 }

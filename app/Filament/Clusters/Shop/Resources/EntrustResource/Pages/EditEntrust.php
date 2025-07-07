@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\FormService;
+use App\Traits\Filament\Services\UpdateService;
 use App\Traits\Filament\Services\EntrustService;
 use App\Filament\Clusters\Shop\Resources\EntrustResource;
 
@@ -20,18 +22,19 @@ class EditEntrust extends EditRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            EntrustService::getEditing($record)
+            FormService::getFormFill($record)
         );
     }
 
-    public function mutateFormDataBeforeSave(array $data): array
+
+    protected function mutateFormDataBeforeSave(array $data): array
     {
-        return EntrustService::getUpdate($this->record, $data);
+        return UpdateService::getUpdate($this->record, $data);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return EntrustService::getUpdating($record, $data);
+        return UpdateService::getUpdating($record, $data);
     }
 
     protected function getSaveFormAction(): Action
@@ -43,7 +46,6 @@ class EditEntrust extends EditRecord
     {
         return [
             HeaderAction::getBack(),
-            HeaderAction::getActivate($this->getRecord()->id),
             HeaderAction::getGoPayment($this->getRecord()->transaction->invoice),
             HeaderAction::getDelete(),
             HeaderAction::getAddProductAction(),

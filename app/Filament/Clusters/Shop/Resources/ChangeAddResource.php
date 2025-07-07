@@ -35,7 +35,7 @@ class ChangeAddResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->columns(TableService::getColumns())
+            ->columns(ExchangeService::getTable())
             ->filters(TableActions::getTableFilters())
             ->actions(TableActions::getGroup())
             ->bulkActions([

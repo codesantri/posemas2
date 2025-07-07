@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Repeater;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Filament\Forms\FormInput;
 use Filament\Notifications\Notification;
@@ -25,16 +26,16 @@ trait ExchangeService
             Section::make('Proses Pertukaran Emas')
                 ->description('Silahkan isi data dibawah ini untuk melakukan pertukaran emas.')
                 ->schema([
-                    ...FormInput::selectCustomer('customer_id'),
+                    ...FormService::selectCustomer(),
                     Hidden::make('change_type')->default($type)->required()->dehydrated(true),
                     Grid::make(2)->schema([
                         Repeater::make('olds')
                             ->label('Produk Lama')
                             ->schema([
-                                ...FormInput::selectProduct('produk_id'),
+                                ...FormService::selectProduct(),
                                 Grid::make(2)->schema([
-                                    ...FormInput::inputQuantity('quantity'),
-                                    ...FormInput::inputPrice('price'),
+                                    ...FormService::inputQuantity(),
+                                    ...FormService::inputPrice(),
                                 ])
                             ])
                             ->addActionLabel('Tambah Produk Lama') // Lebih deskriptif
@@ -44,10 +45,10 @@ trait ExchangeService
                         Repeater::make('news')
                             ->label('Produk Baru')
                             ->schema([
-                                ...FormInput::selectProduct('produk_id'),
+                                ...FormService::selectProduct(),
                                 Grid::make(2)->schema([
-                                    ...FormInput::inputQuantity('quantity'),
-                                    ...FormInput::inputPrice('price'),
+                                    ...FormService::inputQuantity(),
+                                    ...FormService::inputPrice(),
                                 ])
                             ])
                             ->addActionLabel('Tambah Produk Baru') // Lebih deskriptif
@@ -58,9 +59,89 @@ trait ExchangeService
         ];
     }
 
+    public static function getTable()
+    {
+        return [
+            TextColumn::make('customer.name')
+                ->label('PELANGGAN')
+                ->searchable(),
+            TextColumn::make('weight_old')
+                ->label('BERAT LAMA')
+                ->state(function ($record) {
+                    return $record->changeItems
+                        ->where('item_type', 'old')
+                        ->map(fn($item) => $item->total_weight)
+                        ->sum();
+                })
+
+                ->formatStateUsing(
+                    fn($state) =>
+                    number_format(GeneralService::getMayam($state), 2, ',', '.') . ' my (' . number_format($state, 2, ',', '.') . ' gr)'
+                ),
+
+            TextColumn::make('weight_new')
+                ->label('BERAT BARU')
+                ->state(function ($record) {
+                    return $record->changeItems
+                        ->where('item_type', 'new')
+                        ->map(fn($item) => $item->total_weight)
+                        ->sum();
+                })
+                ->formatStateUsing(
+                    fn($state) =>
+                    number_format(GeneralService::getMayam($state), 2, ',', '.') . ' my (' . number_format($state, 2, ',', '.') . ' gr)'
+                ),
+
+            TextColumn::make('total_old')
+                ->label('LAMA')
+                ->icon('heroicon-o-arrow-down')
+                ->state(function ($record) {
+                    return $record->changeItems
+                        ->where('item_type', 'old')
+                        ->sum('subtotal');
+                })
+                ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))
+                ->color('danger'), // Merah
+
+            TextColumn::make('total_new')
+                ->label('BARU')
+                ->icon('heroicon-o-arrow-up')
+                ->state(function ($record) {
+                    return $record->changeItems
+                        ->where('item_type', 'new')
+                        ->sum('subtotal');
+                })
+                ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))
+                ->color('success'), // Hijau
+            TextColumn::make('total_payment')
+                ->label('HARGA')
+                ->color('primary')
+                ->icon('heroicon-o-currency-dollar')
+                ->state(fn($record) => $record->total_payment)
+                ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.')),
+            TextColumn::make('transaction.status')
+                ->label('STATUS')
+                ->badge()
+                ->formatStateUsing(fn($state) => match ($state) {
+                    'pending' => 'Menunggu',
+                    'success' => 'Sukses',
+                    'failed' => 'Gagal',
+                    default => 'Tidak Diketahui',
+                })
+                ->color(fn($state) => [
+                    'pending' => 'warning',
+                    'success' => 'success',
+                    'failed' => 'danger',
+                ][$state] ?? 'gray'),
+            TextColumn::make('created_at')
+                ->label('TANGGAL')
+                ->date('d M Y')
+                ->searchable(),
+        ];
+    }
+
     public static function getCreate(array $data): array
     {
-        Log::info('Data mentah dari form:', $data);
         $totalOld = 0;
         $totalNew = 0;
         $olds = [];
@@ -72,7 +153,7 @@ trait ExchangeService
         } else {
             foreach ($data['olds'] as $item) {
                 if (!isset($item['product_id']) || is_null($item['product_id'])) {
-                    continue; // Lewati baris ini
+                    continue;
                 }
 
                 $product = Product::find($item['product_id']);
@@ -83,9 +164,11 @@ trait ExchangeService
                 }
 
                 $productName = $product->name ?? "Tidak diketahui";
-
+                $karatName = $product->karat->name ?? "Tidak diketahui";
+                $weight = $product->weight ?? 0;
                 $qty = (int) ($item['quantity'] ?? 0);
                 $price = isset($item['price']) ? (int) preg_replace('/[^\d]/', '', $item['price']) : 0;
+                $totalWeight = $weight * $qty;
 
                 if ($qty <= 0) {
                     $errors[] = "Quantity untuk produk lama '$productName' harus lebih dari 0.";
@@ -102,6 +185,9 @@ trait ExchangeService
 
                 $olds[] = [
                     'product_id' => $product->id,
+                    'product_name' => $productName,
+                    'karat_name' => $karatName,
+                    'total_weight' => $totalWeight,
                     'quantity' => $qty,
                     'price' => $price,
                     'subtotal' => $subtotal,
@@ -113,9 +199,8 @@ trait ExchangeService
             $errors[] = "Minimal satu produk baru harus diisi.";
         } else {
             foreach ($data['news'] as $item) {
-                // Jika product_id tidak ada atau null, anggap sebagai baris kosong
                 if (!isset($item['product_id']) || is_null($item['product_id'])) {
-                    continue; // Lewati baris ini
+                    continue;
                 }
 
                 $product = Product::find($item['product_id']);
@@ -126,9 +211,11 @@ trait ExchangeService
                 }
 
                 $productName = $product->name ?? "Tidak diketahui";
-
+                $karatName = $product->karat->name ?? "Tidak diketahui";
+                $weight = $product->weight ?? 0;
                 $qty = (int) ($item['quantity'] ?? 0);
                 $price = isset($item['price']) ? (int) preg_replace('/[^\d]/', '', $item['price']) : 0;
+                $totalWeight = $weight * $qty;
 
                 if ($qty <= 0) {
                     $errors[] = "Jumlah untuk produk '$productName' harus lebih dari 0.";
@@ -145,6 +232,9 @@ trait ExchangeService
 
                 $news[] = [
                     'product_id' => $product->id,
+                    'product_name' => $productName,
+                    'karat_name' => $karatName,
+                    'total_weight' => $totalWeight,
                     'quantity' => $qty,
                     'price' => $price,
                     'subtotal' => $subtotal,
@@ -152,7 +242,6 @@ trait ExchangeService
             }
         }
 
-        // Cek jika repeater kosong setelah filtering item yang tidak valid
         if (empty($olds)) {
             $errors[] = "Minimal satu produk lama harus diisi.";
         }
@@ -161,10 +250,7 @@ trait ExchangeService
             $errors[] = "Minimal satu produk baru harus diisi.";
         }
 
-
-        // Validasi khusus berdasarkan change_type
-        $changeType = $data['change_type'] ?? 'change_model'; // Ambil dari data form
-
+        $changeType = $data['change_type'];
         $totalPayment = 0;
 
         if ($totalOld > $totalNew) {
@@ -175,7 +261,6 @@ trait ExchangeService
             $totalPayment = 0;
         }
 
-        // Validasi lebih lanjut berdasarkan change_type
         if ($changeType === 'add' && $totalOld >= $totalNew) {
             $errors[] = "Total nilai produk lama harus lebih kecil dari total nilai produk baru.";
         }
@@ -188,7 +273,6 @@ trait ExchangeService
             $errors[] = "Total nilai produk lama harus sama dengan total nilai produk baru.";
         }
 
-        // Jika ada error, kirim notifikasi dan lempar ValidationException
         if (!empty($errors)) {
             Notification::make()
                 ->title('Validasi Gagal')
@@ -201,15 +285,14 @@ trait ExchangeService
             ]);
         }
 
-        $result = [
-            'customer_id' => $data['customer_id'], // Pastikan customer_id diteruskan
+        return [
+            'customer_id' => $data['customer_id'],
             'change_type' => $changeType,
             'total_payment' => $totalPayment,
             'status' => 'pending',
             'olds' => $olds,
             'news' => $news,
         ];
-        return $result;
     }
 
     public static function handleCreate(array $data): Change
@@ -219,22 +302,22 @@ trait ExchangeService
         try {
             $transaction = Transaction::create([
                 'transaction_type' => 'change',
-                'payment_method' => $data['payment_method'] ?? 'cash',
             ]);
-            // Buat Change dulu supaya invoice terisi
+
             $change = new Change();
             $change->transaction_id = $transaction->id;
             $change->customer_id = $data['customer_id'];
             $change->change_type = $data['change_type'];
             $change->total_payment = $data['total_payment'];
-            $change->status = $data['status'] ?? 'pending';
             $change->save();
 
-            // Simpan item lama
             foreach ($data['olds'] ?? [] as $item) {
                 ChangeItem::create([
                     'change_id' => $change->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
+                    'karat_name' => $item['karat_name'],
+                    'total_weight' => $item['total_weight'],
                     'item_type' => 'old',
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
@@ -242,11 +325,13 @@ trait ExchangeService
                 ]);
             }
 
-            // Simpan item baru
             foreach ($data['news'] ?? [] as $item) {
                 ChangeItem::create([
                     'change_id' => $change->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
+                    'karat_name' => $item['karat_name'],
+                    'total_weight' => $item['total_weight'],
                     'item_type' => 'new',
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
@@ -270,7 +355,6 @@ trait ExchangeService
             throw $e;
         }
     }
-
     // Update
     public static function getEditing(Model $record): array
     {
@@ -280,10 +364,8 @@ trait ExchangeService
         foreach ($record->changeItems as $item) {
             $itemData = [
                 'product_id' => $item->product_id,
-                'product_name' => $item->product->name ?? 'Produk tidak ditemukan',
                 'quantity' => $item->quantity,
                 'price' => $item->price,
-                'subtotal' => $item->subtotal,
             ];
 
             if ($item->item_type === 'old') {
@@ -300,18 +382,8 @@ trait ExchangeService
         ];
     }
 
-    /**
-     * Memproses data form untuk update dan melakukan validasi/perhitungan.
-     * Mirip dengan getCreateChange, tetapi menerima objek Change yang ada.
-     *
-     * @param Change $change
-     * @param array $data
-     * @return array
-     */
     public static function getUpdate(Change $change, array $data): array
     {
-        Log::info('Data mentah dari form (UPDATE):', $data);
-
         $totalOld = 0;
         $totalNew = 0;
         $olds = [];
@@ -326,7 +398,9 @@ trait ExchangeService
                 if (empty($item['product_id'])) continue;
 
                 $product = Product::find($item['product_id']);
-                $productName = $product->name ?? ($item['product_name'] ?? "Tidak diketahui");
+                $productName = $product->name ?? "Tidak diketahui";
+                $karatName = $product->karat->name ?? "Tidak diketahui";
+                $weight = $product->weight ?? 0;
 
                 if (!$product) {
                     $errors[] = "Produk lama '$productName' tidak ditemukan.";
@@ -335,6 +409,7 @@ trait ExchangeService
 
                 $qty = (int) ($item['quantity'] ?? 0);
                 $price = isset($item['price']) ? (int) preg_replace('/[^\d]/', '', $item['price']) : 0;
+                $totalWeight = $weight * $qty;
 
                 if ($qty <= 0) {
                     $errors[] = "Quantity untuk produk lama '$productName' harus lebih dari 0.";
@@ -351,6 +426,9 @@ trait ExchangeService
 
                 $olds[] = [
                     'product_id' => $product->id,
+                    'product_name' => $productName,
+                    'karat_name' => $karatName,
+                    'total_weight' => $totalWeight,
                     'quantity' => $qty,
                     'price' => $price,
                     'subtotal' => $subtotal,
@@ -366,7 +444,9 @@ trait ExchangeService
                 if (empty($item['product_id'])) continue;
 
                 $product = Product::find($item['product_id']);
-                $productName = $product->name ?? ($item['product_name'] ?? "Tidak diketahui");
+                $productName = $product->name ?? "Tidak diketahui";
+                $karatName = $product->karat->name ?? "Tidak diketahui";
+                $weight = $product->weight ?? 0;
 
                 if (!$product) {
                     $errors[] = "Produk baru '$productName' tidak ditemukan.";
@@ -375,6 +455,7 @@ trait ExchangeService
 
                 $qty = (int) ($item['quantity'] ?? 0);
                 $price = isset($item['price']) ? (int) preg_replace('/[^\d]/', '', $item['price']) : 0;
+                $totalWeight = $weight * $qty;
 
                 if ($qty <= 0) {
                     $errors[] = "Jumlah untuk produk '$productName' harus lebih dari 0.";
@@ -391,6 +472,9 @@ trait ExchangeService
 
                 $news[] = [
                     'product_id' => $product->id,
+                    'product_name' => $productName,
+                    'karat_name' => $karatName,
+                    'total_weight' => $totalWeight,
                     'quantity' => $qty,
                     'price' => $price,
                     'subtotal' => $subtotal,
@@ -440,7 +524,6 @@ trait ExchangeService
             'customer_id' => $data['customer_id'],
             'change_type' => $changeType,
             'total_payment' => $totalPayment,
-            'status' => $data['status'] ?? 'pending',
             'olds' => $olds,
             'news' => $news,
         ];
@@ -449,13 +532,6 @@ trait ExchangeService
         return $result;
     }
 
-    /**
-     * Memperbarui record Change dan ChangeItems terkait.
-     *
-     * @param Model $record
-     * @param array $data
-     * @return Model
-     */
     public static function getUpdating(Model $record, array $data): Model
     {
         DB::beginTransaction();
@@ -465,7 +541,6 @@ trait ExchangeService
             $change->customer_id = $data['customer_id'];
             $change->change_type = $data['change_type'];
             $change->total_payment = $data['total_payment'];
-            $change->status = $data['status'] ?? 'pending';
             $change->save();
 
             $change->changeItems()->delete();
@@ -474,6 +549,9 @@ trait ExchangeService
                 ChangeItem::create([
                     'change_id' => $change->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
+                    'karat_name' => $item['karat_name'],
+                    'total_weight' => $item['total_weight'],
                     'item_type' => 'old',
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
@@ -485,6 +563,9 @@ trait ExchangeService
                 ChangeItem::create([
                     'change_id' => $change->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
+                    'karat_name' => $item['karat_name'],
+                    'total_weight' => $item['total_weight'],
                     'item_type' => 'new',
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],

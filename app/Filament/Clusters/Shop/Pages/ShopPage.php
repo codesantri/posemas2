@@ -9,7 +9,8 @@ use Filament\Pages\Page;
 use App\Filament\Clusters\Shop;
 use Filament\Pages\SubNavigationPosition;
 use App\Traits\Filament\Action\HeaderAction;
-use App\Traits\Filament\Services\Sale\SaleFormService;
+use App\Traits\Filament\Services\FormService;
+use App\Traits\Filament\Services\GeneralService;
 
 class ShopPage extends Page
 {
@@ -28,7 +29,7 @@ class ShopPage extends Page
 
     public $page = 1;
     public string $search = '';
-    public ?int $categoryId = null;
+    public ?int $typeId = null;
     public ?int $totalOrder = 0;
     public ?int $totalCheckout = 0;
 
@@ -39,16 +40,16 @@ class ShopPage extends Page
 
     public function getProductsProperty()
     {
-        return Product::with(['karat', 'category'])
+        return Product::with(['karat', 'type'])
             ->when(
                 $this->search,
                 fn($query) =>
                 $query->where('name', 'like', '%' . $this->search . '%')
             )
             ->when(
-                $this->categoryId,
+                $this->typeId,
                 fn($query) =>
-                $query->where('category_id', $this->categoryId)
+                $query->where('type_id', $this->typeId)
             )
             ->orderBy('name')
             ->paginate(12, ['*'], 'page', $this->page);
@@ -64,14 +65,14 @@ class ShopPage extends Page
         $this->page = 1; // Reset to first page when search changes
     }
 
-    public function updatingCategoryId()
+    public function updatingTypeId()
     {
         $this->page = 1; // Reset to first page when category changes
     }
 
     public function addToCart($id)
     {
-        SaleFormService::addToCart($id);
+        FormService::addToCart($id);
         $this->countOrder();
     }
 
@@ -83,17 +84,19 @@ class ShopPage extends Page
      */
     public function getMayam($gram = null)
     {
-        if (empty($gram) || $gram <= 0) {
-            return 0;
-        }
-        return round($gram / 3.35, 2);
+
+        return GeneralService::getMayam($gram);
     }
 
     public function countOrder()
     {
         $this->totalOrder = Cart::count();
-        $this->totalCheckout = Sale::where('status', 'pending')->count();
+
+        $this->totalCheckout = Sale::whereHas('transaction', function ($q) {
+            $q->where('status', 'pending');
+        })->count();
     }
+
 
 
     public function gotoCart()

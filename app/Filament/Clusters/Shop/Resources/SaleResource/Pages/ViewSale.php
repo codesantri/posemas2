@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Shop\Resources\SaleResource\Pages;
 
 use Filament\Resources\Pages\ViewRecord;
 use App\Traits\Filament\Action\HeaderAction;
+use App\Traits\Filament\Services\FormService;
 use App\Traits\Filament\Services\SaleService;
 use App\Filament\Clusters\Shop\Resources\SaleResource;
 
@@ -17,7 +18,7 @@ class ViewSale extends ViewRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            SaleService::getEditing($record)
+            FormService::getFormFill($record)
         );
     }
 

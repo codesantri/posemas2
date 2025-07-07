@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
-use App\Traits\Filament\Services\SaleService;
+use App\Traits\Filament\Services\FormService;
+use App\Traits\Filament\Services\UpdateService;
 use App\Filament\Clusters\Shop\Resources\SaleResource;
 
 class EditSale extends EditRecord
@@ -21,21 +22,19 @@ class EditSale extends EditRecord
     {
         $record = $this->getRecord();
         $this->form->fill(
-            SaleService::getEditing($record)
+            FormService::getFormFill($record)
         );
     }
 
-    /**
-     * Transform data sebelum mengisi form
-     */
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        return SaleService::getUpdate($this->record, $data);
+        return UpdateService::getUpdate($this->record, $data);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return SaleService::getUpdating($record, $data);
+        return UpdateService::getUpdating($record, $data);
     }
 
 

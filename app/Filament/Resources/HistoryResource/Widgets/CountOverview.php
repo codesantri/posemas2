@@ -38,14 +38,14 @@ class CountOverview extends BaseWidget
         foreach ($transactions as $transaction) {
             if ($transaction->transaction_type === 'sale' && $transaction->sale) {
                 foreach ($transaction->sale->saleDetails as $detail) {
-                    $gram = optional($detail->product)->weight * optional($detail)->quantity;
+                    $gram = $detail->total_weight;
                     $totalSaleGram += $gram ?? 0;
                 }
             }
 
             if ($transaction->transaction_type === 'purchase' && $transaction->purchase) {
                 foreach ($transaction->purchase->purchaseDetails as $detail) {
-                    $gram = optional($detail->product)->weight * optional($detail)->quantity;
+                    $gram = $detail->total_weight;
                     $totalPurchaseGram += $gram ?? 0;
                 }
             }
@@ -53,7 +53,7 @@ class CountOverview extends BaseWidget
 
             if ($transaction->transaction_type === 'change' && $transaction->exchange) {
                 foreach ($transaction->exchange->changeItems as $detail) {
-                    $gram = optional($detail->product)->weight * optional($detail)->quantity;
+                    $gram = $detail->total_weight;
                     $totalChangeGram += $gram ?? 0;
                 }
             }
@@ -61,7 +61,7 @@ class CountOverview extends BaseWidget
 
             if ($transaction->transaction_type === 'entrust' && $transaction->entrust) {
                 foreach ($transaction->entrust->entrustDetails as $detail) {
-                    $gram = optional($detail->product)->weight * optional($detail)->quantity;
+                    $gram = $detail->total_weight;
                     $totalGramEntrust += $gram ?? 0;
                 }
             }
@@ -70,12 +70,10 @@ class CountOverview extends BaseWidget
 
         $totalWeight = $totalSaleGram + $totalPurchaseGram + $totalGramEntrust + $totalChangeGram;
         $totalMayam = GeneralService::getMayam($totalWeight);
-
-
         return [
             Stat::make('Total', 'Rp ' . number_format($this->getPageTableQuery()->sum('total'), 0, ',', '.'))->color('success'),
-            Stat::make('Total Mayam', number_format($totalMayam, 2) . ' my'), //getCoutMayam
-            Stat::make('Total Gram', number_format($totalWeight, 2) . ' gr'), //getCountGram,
+            Stat::make('Total Mayam', $totalMayam . ' my'), //getCoutMayam
+            Stat::make('Total Gram', $totalWeight . ' gr'), //getCountGram,
         ];
     }
 }

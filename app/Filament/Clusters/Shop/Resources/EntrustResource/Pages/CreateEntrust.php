@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
 use App\Traits\Filament\Action\HeaderAction;
 use App\Traits\Filament\Action\SubmitAction;
+use App\Traits\Filament\Services\CreateService;
 use App\Traits\Filament\Services\EntrustService;
 use App\Filament\Clusters\Shop\Resources\EntrustResource;
+use App\Models\Entrust;
 
 class CreateEntrust extends CreateRecord
 {
@@ -19,12 +21,12 @@ class CreateEntrust extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return EntrustService::getCreate($data);
+        return CreateService::getCreate($data);
     }
 
     protected function handleRecordCreation(array $data): Model
     {
-        return EntrustService::handleCreate($data);
+        return CreateService::handleCreate($data, Entrust::class, 'entrust');
     }
 
     protected function getHeaderActions(): array

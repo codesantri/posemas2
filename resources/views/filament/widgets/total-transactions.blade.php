@@ -1,23 +1,30 @@
 <x-filament-widgets::widget>
-    <div class="flex gap-3">
-        @foreach ($data as $item)
-        <div style="width: 33.3% !important;" class="shadow p-2 my-3 border">
-            <div style="height: 3rem" class="text-sm font-semibold text-dark border-b d-flex items-end" style="font-size: 12px;"><h1>{{ $item['desc'] }}</h1></div>
-            <div class="mb-4">
-                <h1 class="text-xl font-extrabold my-4 flex items-end" style="font-size: 1.6rem">
-                    <img src="{{ asset($item['icon']) }}" alt="" width="50">
-                    <span class="mx-3">Rp. {{ number_format($item['total'], 0, ',', '.') }}</span>
-                </h1>
-                <div class="flex justify-between items-center mb-2">
-                    <x-filament::badge size="xs">
-                        <h1 class="text-lg text-dark">{{ $item['mayam'] }} Mayam</h1>
-                    </x-filament::badge>
-                    <x-filament::badge size="xs" color="info">
-                        <h1 class="text-lg text-dark">{{ $item['gram'] }} Gram</h1>
-                    </x-filament::badge>
+    <h1 class="text-center text-3xl font-bold mb-5">HARGA EMAS TERJUAL</h1>
+    <di class="flex justify-between items-center mr-3">
+        <div class="w-1/2">
+            <x-filament::section class="w-full">
+                <div class="flex items-center border-b py-2">
+                    <img src="{{ asset('icon/total.png') }}" alt="" width="50">
+                    <h1 class="text-3xl font-bold mb-5 mx-3 ">Rp. {{ number_format($data['total'], 0, ',', '.') }}</h1>
                 </div>
-            </div>
+                <div class="flex items-center justify-between">
+                    <h1 class="text-lg text-dark text-start font-bold">Jumlah = {{ $data['total_mayam'] }} my </h1>
+                    <img src="{{ asset('icon/gold.png') }}" alt="gold-icon" width="80">
+                </div>
+            </x-filament::section>
         </div>
-        @endforeach
-    </div>
+        <div class="w-1/2 mx-3">
+            <x-filament::section class="w-full">
+                <div class="flex items-center border-b py-2">
+                    <img src="{{ asset('icon/total.png') }}" alt="" width="50">
+                    <h1 class="text-3xl font-bold mb-5 mx-3 ">Rp. {{ number_format($data['total'], 0, ',', '.') }}</h1>
+                </div>
+                <div class="flex items-center justify-between">
+                    <h1 class="text-lg text-dark text-start font-bold">Jumlah = {{ $data['total_weight'] }}  gr </h1>
+                    <img src="{{ asset('icon/gold.png') }}" alt="gold-icon" width="80">
+                </div>
+            </x-filament::section>
+
+        </div>
+    </di>
 </x-filament-widgets::widget>

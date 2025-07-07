@@ -22,7 +22,7 @@ trait TableActions
             ViewAction::make(),
 
             EditAction::make()
-                ->hidden(fn($record) => $record->status === 'success'),
+                ->hidden(fn($record) => $record->transaction->status === 'success'),
 
             DeleteAction::make(),
 
@@ -30,7 +30,7 @@ trait TableActions
                 ->label('Pembayaran')
                 ->icon('heroicon-m-credit-card')
                 ->color('success')
-                ->visible(fn($record) => $record->status === 'pending')
+                ->visible(fn($record) => $record->transaction->status === 'pending')
                 ->requiresConfirmation()
                 ->modalHeading('Proses Pembayaran')
                 ->modalDescription('Apakah kamu yakin mau proses pembayaran untuk transaksi ini?')
@@ -41,7 +41,7 @@ trait TableActions
                 ->label('Invoice')
                 ->icon('heroicon-m-document-text')
                 ->color('info')
-                ->visible(fn($record) => $record->status === 'success')
+                ->visible(fn($record) => $record->transaction->status === 'success')
                 ->url(fn($record) => Invoice::getUrl(['invoice' => $record->transaction->invoice])),
         ]);
     }
